@@ -142,3 +142,24 @@ def display_text_content(data):
         console.print(data[0])
     else:
         console.print(json.dumps(data, indent=2))
+
+def project_overview(project_name, sections, project_type):
+    table = Table(title=f"Project Overview: {project_name}")
+    table.add_column("Section", style="cyan")
+    table.add_column("Status", style="magenta")
+
+    for section in sections:
+        # This part needs to fetch data from the repository, but display.py shouldn't have direct access
+        # For now, we'll assume data is passed or fetched by the caller (CLI)
+        # This is a placeholder for the actual logic that will be in CLI
+        # For now, we'll just show a generic status
+        status = "[green]Implemented[/green]" # Placeholder
+
+        if project_type == "Scientific Article":
+            # This logic needs to be moved to CLI, which has access to project_repository
+            # For now, we'll just show a generic status
+            status = "[yellow]Under Development[/yellow]" # Placeholder
+
+        table.add_row(section, status)
+
+    console.print(table)
