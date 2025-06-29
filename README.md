@@ -31,6 +31,10 @@ For 'Novel' projects, the following sections offer structured input, summary tab
 
 **Please Note:** The 'Scientific Article' and 'Scientific Book' project types are currently under active development. While basic functionality is available, some sections may still be generic or lack the full structured input and detailed views present in the 'Novel' project type.
 
+## Known Errors
+
+-   **Export Project Functionality:** The project export feature is currently under development. While it provides basic output in Markdown, JSON, and TXT formats, it may not fully capture all nuances or relationships between different data sections as intended. Users might find the exported content requires manual re-organization or formatting for external use.
+
 ## Tech Stack
 
 -   **Language:** Python
