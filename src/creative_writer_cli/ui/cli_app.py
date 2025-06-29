@@ -125,7 +125,7 @@ class CLIApp:
             sections = self.project_repository.get_project_sections(project_name)
             choice = questionary.select(
                 "What do you want to do?",
-                choices=["View/Edit Sections", "Project Overview", "Export Project", "Back to Main Menu"]
+                choices=["View/Edit Sections", "Rename Project", "Project Overview", "Export Project", "Back to Main Menu"]
             ).ask()
 
             if choice == "View/Edit Sections":
@@ -135,10 +135,31 @@ class CLIApp:
                 project_type = project_meta.get('type')
                 sections = self.project_repository.get_project_sections(project_name)
                 project_overview(project_name, sections, project_type, self.project_repository)
+            elif choice == "Rename Project":
+                self.rename_project(project_name)
+                # After renaming, the project_name variable in this scope is outdated.
+                # We need to break and let the main_menu re-list projects.
+                break
             elif choice == "Export Project":
                 self.export_project_menu(project_name)
             elif choice == "Back to Main Menu" or choice is None:
                 break
+
+    def rename_project(self, old_project_name):
+        new_project_name = questionary.text(f"Enter new name for project '{old_project_name}':").ask()
+        if not new_project_name:
+            self.console.print("[bold red]New project name cannot be empty.[/bold red]")
+            return
+
+        if new_project_name == old_project_name:
+            self.console.print("[bold yellow]Project name is the same. No change made.[/bold yellow]")
+            return
+
+        success, message = self.project_repository.rename_project(old_project_name, new_project_name)
+        if success:
+            self.console.print(f"[bold green]{message}[/bold green]")
+        else:
+            self.console.print(f"[bold red]{message}[/bold red]")
 
     def view_edit_sections(self, project_name, sections):
         section_to_edit = questionary.select(
