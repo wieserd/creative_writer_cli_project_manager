@@ -175,3 +175,7 @@ def project_overview(project_name, sections, project_type, project_repository):
         table.add_row(section, status)
 
     console.print(table)
+
+    # Add word count to the overview
+    total_word_count = project_repository.get_project_word_count(project_name)
+    console.print(f"\n[bold]Total Word Count:[/bold] [green]{total_word_count}[/green]")
