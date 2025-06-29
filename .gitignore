@@ -1,0 +1,22 @@
+# Byte-code files
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# IDE-specific files (common examples)
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Operating System files
+.DS_Store
+.env
+
+# Project data (user-generated, not part of source code)
+projects/
+*.json
+*.txt
+*.md
