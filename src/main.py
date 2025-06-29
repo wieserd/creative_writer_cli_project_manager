@@ -1,10 +1,10 @@
-from creative_writer_cli.data.project_repository import ProjectRepository
-from creative_writer_cli.ui.cli import CLI
+from creative_writer_cli.data.repositories import ProjectRepository
+from creative_writer_cli.ui.cli_app import CLIApp
 
 def main():
     project_repository = ProjectRepository()
-    cli = CLI(project_repository)
-    cli.main_menu()
+    app = CLIApp(project_repository)
+    app.main_menu()
 
 if __name__ == "__main__":
     main()

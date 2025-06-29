@@ -2,23 +2,28 @@ import questionary
 from rich.console import Console
 import json
 
-from ..data.project_repository import ProjectRepository
+from ..data.repositories import ProjectRepository
 from ..core.templates import TEMPLATES
 from ..core.models import Character, PlotPoint, WorldbuildingElement, Theme, NoteIdea, Reference, Chapter
-from .display import (
+from .display.tables import (
     display_character_table, display_plot_table, display_worldbuilding_table,
     display_themes_table, display_notes_table, display_references_table,
-    display_chapters_table, view_details, project_overview
+    display_chapters_table
 )
-from .wizards import (
+from .display.views import view_details, display_text_content, project_overview
+from .wizards.novel_wizards import (
     get_character_input, get_plot_point_input, get_worldbuilding_element_input,
-    get_theme_input, get_note_idea_input, get_reference_input, get_chapter_input
+    get_theme_input, get_note_idea_input
 )
-from ..ascii_art import get_ascii_art
+from .wizards.scientific_wizards import (
+    get_reference_input, get_chapter_input
+)
+from .wizards.generic_wizards import get_simple_text_input
+from .ascii_art import get_ascii_art
 
 console = Console()
 
-class CLI:
+class CLIApp:
     def __init__(self, project_repository: ProjectRepository):
         self.project_repository = project_repository
         self.console = Console()
@@ -119,7 +124,7 @@ class CLI:
                 project_meta = self.project_repository.get_project_meta(project_name)
                 project_type = project_meta.get('type')
                 sections = self.project_repository.get_project_sections(project_name)
-                display.project_overview(project_name, sections, project_type)
+                project_overview(project_name, sections, project_type, self.project_repository)
             elif choice == "Export Project":
                 self.export_project(project_name)
             elif choice == "Back to Main Menu" or choice is None:
@@ -185,13 +190,13 @@ class CLI:
                 edit_action = "Edit Reference"
                 delete_action = "Delete Reference"
                 view_details_action = "View Reference Details"
-            elif section_name == "Chapter 1": # Example for Scientific Book
+            elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
                 display_chapters_table(data)
                 add_action = "Add Chapter Content"
                 edit_action = "Edit Chapter Content"
                 delete_action = "Delete Chapter Content"
                 view_details_action = "View Chapter Details"
-            elif project_type in ["Scientific Article", "Scientific Book"] and section_name in ["Title", "Abstract", "Introduction", "Methods", "Results", "Discussion", "Conclusion"]:
+            elif project_type in ["Scientific Article", "Scientific Book"] and section_name in ["Title", "Abstract", "Introduction", "Methods", "Results", "Discussion"]:
                 display_text_content(data)
                 add_action = "Add Content"
                 edit_action = "Edit Content"
@@ -235,11 +240,11 @@ class CLI:
                 elif section_name == "References":
                     new_item_data = get_reference_input()
                     if new_item_data: data.append(new_item_data)
-                elif section_name == "Chapter 1": # Example for Scientific Book
+                elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
                     new_item_data = get_chapter_input()
                     if new_item_data: data.append(new_item_data)
                 elif project_type in ["Scientific Article", "Scientific Book"] and section_name in ["Title", "Abstract", "Introduction", "Methods", "Results", "Discussion", "Conclusion"]:
-                    new_content = questionary.text("Enter content:", multiline=True).ask()
+                    new_content = get_simple_text_input("Enter content:")
                     if new_content: data = [new_content]
                 else:
                     new_item = questionary.text("Enter new item (in JSON format or simple text):").ask()
@@ -255,15 +260,16 @@ class CLI:
                     continue
                 
                 selected_item_name = None
-                if section_name == "Characters": selected_item_name = questionary.select("Select character to edit:", choices=[item.get("Name", f"Character {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Plot": selected_item_name = questionary.select("Select plot point to edit:", choices=[item.get("Name", f"Plot Point {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Worldbuilding": selected_item_name = questionary.select("Select worldbuilding element to edit:", choices=[item.get("Name", f"Worldbuilding Element {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Themes": selected_item_name = questionary.select("Select theme to edit:", choices=[item.get("Theme Name", f"Theme {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Notes/Ideas": selected_item_name = questionary.select("Select note/idea to edit:", choices=[item.get("Title", f"Note/Idea {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "References": selected_item_name = questionary.select("Select reference to edit:", choices=[item.get("Title", f"Reference {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Chapter 1": selected_item_name = questionary.select("Select chapter to edit:", choices=[item.get("Chapter Title", f"Chapter {i}") for i, item in enumerate(data)]).ask()
+                if section_name == "Characters": selected_item_name = questionary.select("Select character to edit:", choices=[item.get("name", f"Character {i}") for i, item in enumerate(data)]).ask()
+                elif section_name == "Plot": selected_item_name = questionary.select("Select plot point to edit:", choices=[item.get("name", f"Plot Point {i}") for i, item in enumerate(data)]).ask()
+                elif section_name == "Worldbuilding": selected_item_name = questionary.select("Select worldbuilding element to edit:", choices=[item.get("name", f"Worldbuilding Element {i}") for i, item in enumerate(data)]).ask()
+                elif section_name == "Themes": selected_item_name = questionary.select("Select theme to edit:", choices=[item.get("theme_name", f"Theme {i}") for i, item in enumerate(data)]).ask()
+                elif section_name == "Notes/Ideas": selected_item_name = questionary.select("Select note/idea to edit:", choices=[item.get("title", f"Note/Idea {i}") for i, item in enumerate(data)]).ask()
+                elif section_name == "References": selected_item_name = questionary.select("Select reference to edit:", choices=[item.get("title", f"Reference {i}") for i, item in enumerate(data)]).ask()
+                elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
+                    selected_item_name = questionary.select("Select chapter to edit:", choices=[item.get("chapter_title", f"Chapter {i}") for i, item in enumerate(data)]).ask()
                 elif project_type in ["Scientific Article", "Scientific Book"] and section_name in ["Title", "Abstract", "Introduction", "Methods", "Results", "Discussion", "Conclusion"]:
-                    new_content = questionary.text("Edit content:", default=data[0] if data else "", multiline=True).ask()
+                    new_content = get_simple_text_input("Edit content:", default_value=data[0] if data else "")
                     if new_content:
                         data = [new_content]
                         self.project_repository.save_section_content(project_name, section_name, data)
@@ -274,13 +280,14 @@ class CLI:
 
                 if selected_item_name:
                     index = -1
-                    if section_name == "Characters": index = next((i for i, item in enumerate(data) if item.get("Name") == selected_item_name), None)
-                    elif section_name == "Plot": index = next((i for i, item in enumerate(data) if item.get("Name") == selected_item_name), None)
-                    elif section_name == "Worldbuilding": index = next((i for i, item in enumerate(data) if item.get("Name") == selected_item_name), None)
-                    elif section_name == "Themes": index = next((i for i, item in enumerate(data) if item.get("Theme Name") == selected_item_name), None)
-                    elif section_name == "Notes/Ideas": index = next((i for i, item in enumerate(data) if item.get("Title") == selected_item_name), None)
-                    elif section_name == "References": index = next((i for i, item in enumerate(data) if item.get("Title") == selected_item_name), None)
-                    elif section_name == "Chapter 1": index = next((i for i, item in enumerate(data) if item.get("Chapter Title") == selected_item_name), None)
+                    if section_name == "Characters": index = next((i for i, item in enumerate(data) if item.get("name") == selected_item_name), None)
+                    elif section_name == "Plot": index = next((i for i, item in enumerate(data) if item.get("name") == selected_item_name), None)
+                    elif section_name == "Worldbuilding": index = next((i for i, item in enumerate(data) if item.get("name") == selected_item_name), None)
+                    elif section_name == "Themes": index = next((i for i, item in enumerate(data) if item.get("theme_name") == selected_item_name), None)
+                    elif section_name == "Notes/Ideas": index = next((i for i, item in enumerate(data) if item.get("title") == selected_item_name), None)
+                    elif section_name == "References": index = next((i for i, item in enumerate(data) if item.get("title") == selected_item_name), None)
+                    elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
+                        index = next((i for i, item in enumerate(data) if item.get("chapter_title") == selected_item_name), None)
                     else: index = int(selected_item_name.split(':')[0])
 
                     if index is not None and index != -1:
@@ -291,7 +298,8 @@ class CLI:
                         elif section_name == "Themes": updated_item_data = get_theme_input(data[index])
                         elif section_name == "Notes/Ideas": updated_item_data = get_note_idea_input(data[index])
                         elif section_name == "References": updated_item_data = get_reference_input(data[index])
-                        elif section_name == "Chapter 1": updated_item_data = get_chapter_input(data[index])
+                        elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
+                            updated_item_data = get_chapter_input(data[index])
                         else: 
                             new_value = questionary.text("Enter new value:", default=json.dumps(data[index])).ask()
                             try: updated_item_data = json.loads(new_value)
@@ -308,13 +316,14 @@ class CLI:
                     continue
 
                 selected_item_name = None
-                if section_name == "Characters": selected_item_name = questionary.select("Select character to delete:", choices=[item.get("Name", f"Character {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Plot": selected_item_name = questionary.select("Select plot point to delete:", choices=[item.get("Name", f"Plot Point {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Worldbuilding": selected_item_name = questionary.select("Select worldbuilding element to delete:", choices=[item.get("Name", f"Worldbuilding Element {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Themes": selected_item_name = questionary.select("Select theme to delete:", choices=[item.get("Theme Name", f"Theme {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Notes/Ideas": selected_item_name = questionary.select("Select note/idea to delete:", choices=[item.get("Title", f"Note/Idea {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "References": selected_item_name = questionary.select("Select reference to delete:", choices=[item.get("Title", f"Reference {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Chapter 1": selected_item_name = questionary.select("Select chapter to delete:", choices=[item.get("Chapter Title", f"Chapter {i}") for i, item in enumerate(data)]).ask()
+                if section_name == "Characters": selected_item_name = questionary.select("Select character to delete:", choices=[item.get("name", f"Character {i}") for i, item in enumerate(data)]).ask()
+                elif section_name == "Plot": selected_item_name = questionary.select("Select plot point to delete:", choices=[item.get("name", f"Plot Point {i}") for i, item in enumerate(data)]).ask()
+                elif section_name == "Worldbuilding": selected_item_name = questionary.select("Select worldbuilding element to delete:", choices=[item.get("name", f"Worldbuilding Element {i}") for i, item in enumerate(data)]).ask()
+                elif section_name == "Themes": selected_item_name = questionary.select("Select theme to delete:", choices=[item.get("theme_name", f"Theme {i}") for i, item in enumerate(data)]).ask()
+                elif section_name == "Notes/Ideas": selected_item_name = questionary.select("Select note/idea to delete:", choices=[item.get("title", f"Note/Idea {i}") for i, item in enumerate(data)]).ask()
+                elif section_name == "References": selected_item_name = questionary.select("Select reference to delete:", choices=[item.get("title", f"Reference {i}") for i, item in enumerate(data)]).ask()
+                elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
+                    selected_item_name = questionary.select("Select chapter to delete:", choices=[item.get("chapter_title", f"Chapter {i}") for i, item in enumerate(data)]).ask()
                 elif project_type in ["Scientific Article", "Scientific Book"] and section_name in ["Title", "Abstract", "Introduction", "Methods", "Results", "Discussion", "Conclusion"]:
                     if questionary.confirm("Are you sure you want to delete the content?").ask():
                         data = []
@@ -326,13 +335,14 @@ class CLI:
 
                 if selected_item_name:
                     index = -1
-                    if section_name == "Characters": index = next((i for i, item in enumerate(data) if item.get("Name") == selected_item_name), None)
-                    elif section_name == "Plot": index = next((i for i, item in enumerate(data) if item.get("Name") == selected_item_name), None)
-                    elif section_name == "Worldbuilding": index = next((i for i, item in enumerate(data) if item.get("Name") == selected_item_name), None)
-                    elif section_name == "Themes": index = next((i for i, item in enumerate(data) if item.get("Theme Name") == selected_item_name), None)
-                    elif section_name == "Notes/Ideas": index = next((i for i, item in enumerate(data) if item.get("Title") == selected_item_name), None)
-                    elif section_name == "References": index = next((i for i, item in enumerate(data) if item.get("Title") == selected_item_name), None)
-                    elif section_name == "Chapter 1": index = next((i for i, item in enumerate(data) if item.get("Chapter Title") == selected_item_name), None)
+                    if section_name == "Characters": index = next((i for i, item in enumerate(data) if item.get("name") == selected_item_name), None)
+                    elif section_name == "Plot": index = next((i for i, item in enumerate(data) if item.get("name") == selected_item_name), None)
+                    elif section_name == "Worldbuilding": index = next((i for i, item in enumerate(data) if item.get("name") == selected_item_name), None)
+                    elif section_name == "Themes": index = next((i for i, item in enumerate(data) if item.get("theme_name") == selected_item_name), None)
+                    elif section_name == "Notes/Ideas": index = next((i for i, item in enumerate(data) if item.get("title") == selected_item_name), None)
+                    elif section_name == "References": index = next((i for i, item in enumerate(data) if item.get("title") == selected_item_name), None)
+                    elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
+                        index = next((i for i, item in enumerate(data) if item.get("chapter_title") == selected_item_name), None)
                     else: index = int(selected_item_name.split(':')[0])
 
                     if index is not None and index != -1:
@@ -341,10 +351,11 @@ class CLI:
                         self.console.print(f"[green]{delete_action.replace('Delete ', '')} deleted.[/green]")
             
             elif action == view_details_action:
-                if section_name == "Characters": view_details(data, "Name")
-                elif section_name == "Plot": view_details(data, "Name")
-                elif section_name == "Worldbuilding": view_details(data, "Name")
-                elif section_name == "Themes": view_details(data, "Theme Name")
-                elif section_name == "Notes/Ideas": view_details(data, "Title")
-                elif section_name == "References": view_details(data, "Title")
-                elif section_name == "Chapter 1": view_details(data, "Chapter Title")
+                if section_name == "Characters": view_details(data, "name")
+                elif section_name == "Plot": view_details(data, "name")
+                elif section_name == "Worldbuilding": view_details(data, "name")
+                elif section_name == "Themes": view_details(data, "theme_name")
+                elif section_name == "Notes/Ideas": view_details(data, "title")
+                elif section_name == "References": view_details(data, "title")
+                elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
+                    view_details(data, "chapter_title")
