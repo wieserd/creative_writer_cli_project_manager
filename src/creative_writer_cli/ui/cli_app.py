@@ -351,7 +351,7 @@ class CLIApp:
                         self.console.print(f"[green]{delete_action.replace('Delete ', '')} deleted.[/green]")
             
             elif action == view_details_action:
-                if section_name == "Characters": view_details(data, "name")
+                if section_name == "Characters": view_details(data, "Name")
                 elif section_name == "Plot": view_details(data, "name")
                 elif section_name == "Worldbuilding": view_details(data, "name")
                 elif section_name == "Themes": view_details(data, "theme_name")

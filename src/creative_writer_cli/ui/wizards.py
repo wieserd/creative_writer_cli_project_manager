@@ -24,8 +24,8 @@ def get_character_input(character_data=None):
 
 def get_plot_point_input(plot_point_data=None):
     fields = [
-        ("Name", "text"), ("Details", "text"), ("Timeline/Order", "text"), 
-        ("Characters Involved", "text"), ("Location", "text"), ("Status", "text", ["Idea", "Outline", "First Draft", "Completed"])
+        ("name", "text"), ("details", "text"), ("timeline_order", "text"), 
+        ("characters_involved", "text"), ("location", "text"), ("status", "text", ["Idea", "Outline", "First Draft", "Completed"])
     ]
 
     data = plot_point_data if plot_point_data else {}
