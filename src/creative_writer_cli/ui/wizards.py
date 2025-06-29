@@ -25,17 +25,22 @@ def get_character_input(character_data=None):
 def get_plot_point_input(plot_point_data=None):
     fields = [
         ("name", "text"), ("details", "text"), ("timeline_order", "text"), 
-        ("characters_involved", "text"), ("location", "text"), ("status", "text", ["Idea", "Outline", "First Draft", "Completed"])
+        ("characters_involved", "text"), ("location", "text"),
+        ("status", "select", ["Idea", "Outline", "First Draft", "Completed"]) # Changed from "text" to "select"
     ]
 
     data = plot_point_data if plot_point_data else {}
     for field_name, field_type, *options in fields:
-        default_value = data.get(field_name, "")
+        current_value = data.get(field_name, "") # Get current value from data or empty string
+
         if field_type == "text":
-            answer = questionary.text(f"Enter {field_name}:", default=default_value).ask()
+            answer = questionary.text(f"Enter {field_name}:", default=current_value).ask()
         elif field_type == "select":
-            answer = questionary.select(f"Select {field_name}:", choices=options[0], default=default_value).ask()
-        
+            choices = options[0]
+            # Ensure default_value is one of the choices, or None
+            default_value_for_select = current_value if current_value in choices else (choices[0] if choices else None)
+            answer = questionary.select(f"Select {field_name}:", choices=choices, default=default_value_for_select).ask()
+
         if answer is not None:
             data[field_name] = answer
     return data
