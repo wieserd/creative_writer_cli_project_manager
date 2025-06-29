@@ -20,3 +20,6 @@ projects/
 *.json
 *.txt
 *.md
+src/creative_writer_cli/ui/__pycache__/cli.cpython-312.pyc
+src/creative_writer_cli/core/__pycache__/templates.cpython-312.pyc
+src/creative_writer_cli/ui/__pycache__/display.cpython-312.pyc
