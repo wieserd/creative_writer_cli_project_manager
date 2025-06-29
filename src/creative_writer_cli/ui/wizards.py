@@ -123,3 +123,6 @@ def get_chapter_input(chapter_data=None):
         if answer is not None:
             data[field_name] = answer
     return data
+
+def get_simple_text_input(prompt, default_value=""):
+    return questionary.text(prompt, default=default_value, multiline=True).ask()
