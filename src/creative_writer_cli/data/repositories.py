@@ -178,7 +178,10 @@ class ProjectRepository:
                 all_data[section_name.lower().replace(' ', '_')] = content
             output_content = json.dumps(all_data, indent=4)
 
-        export_filename = f"{project_name}_export.{export_format.lower()}"
+        export_extension = export_format.lower()
+        if export_extension == "markdown":
+            export_extension = "md"
+        export_filename = f"{project_name}_export.{export_extension}"
         with open(export_filename, "w") as f:
             f.write(output_content)
         return f"Project exported to {export_filename}"

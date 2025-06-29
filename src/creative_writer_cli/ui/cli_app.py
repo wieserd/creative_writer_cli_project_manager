@@ -126,7 +126,7 @@ class CLIApp:
                 sections = self.project_repository.get_project_sections(project_name)
                 project_overview(project_name, sections, project_type, self.project_repository)
             elif choice == "Export Project":
-                self.export_project(project_name)
+                self.export_project_menu(project_name)
             elif choice == "Back to Main Menu" or choice is None:
                 break
 
@@ -138,6 +138,16 @@ class CLIApp:
 
         if section_to_edit:
             self.edit_section(project_name, section_to_edit)
+
+    def export_project_menu(self, project_name):
+        export_format = questionary.select(
+            "Select export format:",
+            choices=["Markdown", "JSON", "TXT"]
+        ).ask()
+
+        if export_format:
+            message = self.project_repository.export_project(project_name, export_format)
+            self.console.print(f"[bold green]{message}[/bold green]")
 
     def edit_section(self, project_name, section_name):
         while True:
