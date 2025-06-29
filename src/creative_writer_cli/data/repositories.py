@@ -186,7 +186,29 @@ class ProjectRepository:
             f.write(output_content)
         return f"Project exported to {export_filename}"
 
-        export_filename = f"{project_name}_export.{export_format.lower()}"
         with open(export_filename, "w") as f:
             f.write(output_content)
         return f"Project exported to {export_filename}"
+
+    def rename_project(self, old_project_name: str, new_project_name: str) -> tuple[bool, str]:
+        old_project_path = os.path.join(self.base_dir, old_project_name)
+        new_project_path = os.path.join(self.base_dir, new_project_name)
+
+        if not os.path.exists(old_project_path):
+            return False, "Original project not found."
+
+        if os.path.exists(new_project_path):
+            return False, "A project with the new name already exists."
+
+        try:
+            shutil.move(old_project_path, new_project_path)
+
+            # Update the project name in the meta.json file
+            meta_filepath = os.path.join(new_project_path, "meta.json")
+            meta_data = self.json_store.read_json(os.path.join(new_project_name, "meta.json")) # Read from new path
+            meta_data["name"] = new_project_name
+            self.json_store.write_json(os.path.join(new_project_name, "meta.json"), meta_data) # Write to new path
+
+            return True, f"Project '{old_project_name}' renamed to '{new_project_name}' successfully."
+        except Exception as e:
+            return False, f"Error renaming project: {e}"
