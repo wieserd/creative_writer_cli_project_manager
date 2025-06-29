@@ -43,7 +43,10 @@ class CLIApp:
             elif choice == "Delete Project":
                 self.delete_project()
             elif choice == "Exit" or choice is None:
-                break
+                if questionary.confirm("Are you sure you want to exit? This will close the application.").ask():
+                    break
+                else:
+                    continue # If user says no, continue the loop and show main menu again
 
     def create_project(self):
         project_type = questionary.select(

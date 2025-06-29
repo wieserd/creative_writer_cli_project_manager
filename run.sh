@@ -25,8 +25,22 @@ source "$VENV_PATH/bin/activate"
 
 # Install dependencies if requirements.txt exists
 if [ -f "$SCRIPT_DIR/requirements.txt" ]; then
-    echo "Installing dependencies..."
-    "$VENV_PATH/bin/pip" install -r "$SCRIPT_DIR/requirements.txt"
+    echo -n "Initializing... "
+    # Redirect pip install output to a temporary file
+    LOG_FILE=$(mktemp)
+    "$VENV_PATH/bin/pip" install -r "$SCRIPT_DIR/requirements.txt" > "$LOG_FILE" 2>&1
+    PIP_STATUS=$?
+
+    if [ $PIP_STATUS -ne 0 ]; then
+        echo "Failed."
+        echo "Initialization failed. Showing logs:"
+        cat "$LOG_FILE"
+        rm "$LOG_FILE"
+        exit $PIP_STATUS
+    else
+        echo "Done."
+        rm "$LOG_FILE"
+    fi
 fi
 
 # Run the main application
