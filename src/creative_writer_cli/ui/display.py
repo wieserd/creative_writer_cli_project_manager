@@ -143,23 +143,31 @@ def display_text_content(data):
     else:
         console.print(json.dumps(data, indent=2))
 
-def project_overview(project_name, sections, project_type):
+def project_overview(project_name, sections, project_type, project_repository):
     table = Table(title=f"Project Overview: {project_name}")
     table.add_column("Section", style="cyan")
     table.add_column("Status", style="magenta")
 
     for section in sections:
-        # This part needs to fetch data from the repository, but display.py shouldn't have direct access
-        # For now, we'll assume data is passed or fetched by the caller (CLI)
-        # This is a placeholder for the actual logic that will be in CLI
-        # For now, we'll just show a generic status
-        status = "[green]Implemented[/green]" # Placeholder
+        data = project_repository.get_section_content(project_name, section)
+        status = ""
 
         if project_type == "Scientific Article":
-            # This logic needs to be moved to CLI, which has access to project_repository
-            # For now, we'll just show a generic status
-            status = "[yellow]Under Development[/yellow]" # Placeholder
-
+            if section == "References":
+                status = f"[green]{len(data)} references[/green]" if data else "[red]No references[/red]"
+            elif section in ["Title", "Abstract", "Introduction", "Methods", "Results", "Discussion", "Conclusion"]:
+                if data and data[0]:
+                    snippet = data[0][:70]  # Take first 70 characters
+                    if len(data[0]) > 70:
+                        snippet += "..."
+                    status = f"[green]{snippet}[/green]"
+                else:
+                    status = "[red]Empty[/red]"
+            else: # Fallback for any other scientific article sections not explicitly handled
+                status = "[green]Complete[/green]" if data else "[red]Missing[/red]"
+        else: # For Novel and other project types
+            status = "[green]Complete[/green]" if data else "[red]Missing[/red]"
+        
         table.add_row(section, status)
 
     console.print(table)
