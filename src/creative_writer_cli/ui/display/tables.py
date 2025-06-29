@@ -31,7 +31,7 @@ def display_plot_table(data):
     table.add_column("Name", style="magenta")
     table.add_column("Status", style="green")
 
-    sorted_data = sorted(data, key=lambda x: int(x.get("timeline_order", 0) or 0))
+    sorted_data = sorted(data, key=lambda x: int(x.get("timeline_order", 0) or 0) if str(x.get("timeline_order", 0) or 0).isdigit() else 0)
 
     for plot_point in sorted_data:
         table.add_row(
