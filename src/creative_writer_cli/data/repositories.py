@@ -34,6 +34,7 @@ class ProjectRepository:
         return True, f"Project '{project_name}' of type '{project_type}' created successfully."
 
     def get_projects(self) -> list[str]:
+        # List directories directly within the base_dir
         return [d for d in os.listdir(self.base_dir) if os.path.isdir(os.path.join(self.base_dir, d))]
 
     def delete_project(self, project_name: str) -> tuple[bool, str]:
@@ -57,31 +58,36 @@ class ProjectRepository:
         self.json_store.write_json(self._get_section_filepath(project_name, section_name), data)
 
     def export_project(self, project_name: str, export_format: str) -> str:
-        project_path = os.path.join(self.base_dir, project_name)
+        project_abs_path = os.path.join(self.base_dir, project_name)
         output_content = ""
+
+        all_files = os.listdir(project_abs_path)
 
         if export_format == "Markdown":
             output_content += f"# {project_name}\n\n"
-            for section_file in os.listdir(project_path):
-                if section_file.endswith(".json") and section_file != "meta.json":
-                    section_name = section_file.replace('.json', '').replace('_', ' ').title()
-                    content = self.json_store.read_json(os.path.join(project_name, section_file))
-                    output_content += f"## {section_name}\n\n"
+            for file_name in all_files:
+                if file_name.endswith(".json") and file_name != "meta.json":
+                    section_name_display = file_name.replace('.json', '').replace('_', ' ').title()
+                    relative_file_path = os.path.join(project_name, file_name)
+                    content = self.json_store.read_json(relative_file_path)
+                    output_content += f"## {section_name_display}\n\n"
                     output_content += f"```json\n{json.dumps(content, indent=2)}\n```\n\n"
         elif export_format == "JSON":
             all_data = {}
-            for section_file in os.listdir(project_path):
-                if section_file.endswith(".json"):
-                    section_name = section_file.replace('.json', '')
-                    all_data[section_name] = self.json_store.read_json(os.path.join(project_name, section_file))
+            for file_name in all_files:
+                if file_name.endswith(".json"):
+                    section_name_key = file_name.replace('.json', '')
+                    relative_file_path = os.path.join(project_name, file_name)
+                    all_data[section_name_key] = self.json_store.read_json(relative_file_path)
             output_content = json.dumps(all_data, indent=4)
         elif export_format == "TXT":
             output_content += f"Project: {project_name}\n\n"
-            for section_file in os.listdir(project_path):
-                if section_file.endswith(".json") and section_file != "meta.json":
-                    section_name = section_file.replace('.json', '').replace('_', ' ').title()
-                    content = self.json_store.read_json(os.path.join(project_name, section_file))
-                    output_content += f"--- {section_name} ---\n\n"
+            for file_name in all_files:
+                if file_name.endswith(".json") and file_name != "meta.json":
+                    section_name_display = file_name.replace('.json', '').replace('_', ' ').title()
+                    relative_file_path = os.path.join(project_name, file_name)
+                    content = self.json_store.read_json(relative_file_path)
+                    output_content += f"--- {section_name_display} ---\n\n"
                     output_content += f"{json.dumps(content, indent=2)}\n\n"
 
         export_filename = f"{project_name}_export.{export_format.lower()}"
