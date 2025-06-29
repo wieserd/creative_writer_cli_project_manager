@@ -25,11 +25,11 @@ For 'Novel' projects, the following sections offer structured input, summary tab
 
 -   **Dynamic Section Menus:** Menus adapt to the specific needs of scientific article sections.
 -   **Content Snippets in Overview:** For sections like Title, Abstract, Introduction, Methods, Results, and Discussion, the project overview displays a snippet of the content.
--   **References Management:** A structured section for managing references with fields for Author(s), Year, Title, Journal/Conference, and DOI/URL.
+-   **References Management:** A structured section for managing references with fields for Author(s), Year, Title, Journal/Conference, and DOI/URL. Now includes the ability to import reference data directly from a DOI URL using the CrossRef API.
 
 ## Development Status
 
-**Please Note:** The 'Scientific Article' and 'Scientific Book' project types are currently under active development. While basic functionality is available, some sections may still be generic or lack the full structured input and detailed views present in the 'Novel' project type.
+**Please Note:** The 'Scientific Book' project type is currently under active development. While basic functionality is available, some sections may still be generic or lack the full structured input and detailed views present in the 'Novel' project type.
 
 ## Known Errors
 
