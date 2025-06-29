@@ -9,7 +9,7 @@ A minimalistic command-line interface (CLI) tool designed to help writers organi
 -   **Project Management:** Organize your ideas and content within dedicated project structures.
 -   **Templates:** Guided input based on predefined templates for different writing types.
 -   **Progress Overview:** See what sections are complete, what's still missing, and the count of items (e.g., characters, plot points) at a glance. Includes a total word count for the project.
--   **Export Project:** Export your entire project content to Markdown, JSON, TXT, BibTeX, RIS, or Zotero RDF formats.
+-   **Export Project:** Export your entire project content to Markdown, JSON, or TXT formats. (Note: BibTeX, RIS, and Zotero RDF export are currently under development and may not function as expected.)
 
 ### Enhanced Novel Project Sections
 
