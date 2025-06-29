@@ -116,7 +116,10 @@ class CLI:
             if choice == "View/Edit Sections":
                 self.view_edit_sections(project_name, sections)
             elif choice == "Project Overview":
-                self.project_overview(project_name, sections)
+                project_meta = self.project_repository.get_project_meta(project_name)
+                project_type = project_meta.get('type')
+                sections = self.project_repository.get_project_sections(project_name)
+                self.project_overview(project_name, sections, project_type)
             elif choice == "Export Project":
                 self.export_project(project_name)
             elif choice == "Back to Main Menu" or choice is None:
