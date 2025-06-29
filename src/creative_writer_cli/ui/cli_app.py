@@ -176,7 +176,7 @@ class CLIApp:
     def export_project_menu(self, project_name):
         export_format = questionary.select(
             "Select export format:",
-            choices=["Markdown", "JSON", "TXT", "BibTeX", "RIS", "Zotero RDF"]
+            choices=["Markdown", "JSON", "TXT"]
         ).ask()
 
         if export_format:
@@ -234,6 +234,8 @@ class CLIApp:
                 edit_action = "Edit Reference"
                 delete_action = "Delete Reference"
                 view_details_action = "View Reference Details"
+                if project_type == "Scientific Article":
+                    choices.insert(0, "Export References") # Add export option for scientific articles
             elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
                 display_chapters_table(data)
                 add_action = "Add Chapter Content"
@@ -403,3 +405,15 @@ class CLIApp:
                 elif section_name == "References": view_details(data, "title")
                 elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
                     view_details(data, "chapter_title")
+            elif action == "Export References":
+                self.export_references_menu(project_name)
+
+    def export_references_menu(self, project_name):
+        export_format = questionary.select(
+            "Select reference export format:",
+            choices=["BibTeX", "RIS", "Zotero RDF"]
+        ).ask()
+
+        if export_format:
+            message = self.project_repository.export_project(project_name, export_format)
+            self.console.print(f"[bold green]{message}[/bold green]")

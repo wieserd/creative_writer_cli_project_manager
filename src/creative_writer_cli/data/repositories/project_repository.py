@@ -9,14 +9,14 @@ from .json_store import JsonStore
 from ...utils import export_formatter, reference_export_formatter
 from ...utils.word_counter import calculate_word_count
 
+from ...utils.path_helpers import get_section_filepath
+
 class ProjectRepository:
     def __init__(self, base_dir="projects"):
         self.base_dir = base_dir
         self.json_store = JsonStore(base_dir)
         if not os.path.exists(self.base_dir):
             os.makedirs(self.base_dir)
-
-    from ...utils.path_helpers import get_section_filepath
 
     def create_project(self, project_name: str, project_type: str) -> tuple[bool, str]:
         project_path = os.path.join(self.base_dir, project_name)
@@ -52,10 +52,10 @@ class ProjectRepository:
         return TEMPLATES[meta['type']]
 
     def get_section_content(self, project_name: str, section_name: str) -> list[dict]:
-        return self.json_store.read_json(self._get_section_filepath(project_name, section_name))
+        return self.json_store.read_json(get_section_filepath(project_name, section_name))
 
     def save_section_content(self, project_name: str, section_name: str, data: list[dict]):
-        self.json_store.write_json(self._get_section_filepath(project_name, section_name), data)
+        self.json_store.write_json(get_section_filepath(project_name, section_name), data)
 
     def export_project(self, project_name: str, export_format: str) -> str:
         project_abs_path = os.path.join(self.base_dir, project_name)
