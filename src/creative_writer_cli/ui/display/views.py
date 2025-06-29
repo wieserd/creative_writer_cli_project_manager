@@ -166,7 +166,11 @@ def project_overview(project_name, sections, project_type, project_repository):
             else: # Fallback for any other scientific article sections not explicitly handled
                 status = "[green]Complete[/green]" if data else "[red]Missing[/red]"
         else: # For Novel and other project types
-            status = "[green]Complete[/green]" if data else "[red]Missing[/red]"
+            if section in ["Characters", "Plot", "Worldbuilding", "Themes", "Notes/Ideas"]:
+                count = len(data) if isinstance(data, list) else 0
+                status = f"[green]{count} {section.lower()}[/green]" if count > 0 else f"[red]{count} {section.lower()}[/red]"
+            else:
+                status = "[green]Complete[/green]" if data else "[red]Missing[/red]"
         
         table.add_row(section, status)
 
