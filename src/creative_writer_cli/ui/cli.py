@@ -8,7 +8,7 @@ from ..core.models import Character, PlotPoint, WorldbuildingElement, Theme, Not
 from .display import (
     display_character_table, display_plot_table, display_worldbuilding_table,
     display_themes_table, display_notes_table, display_references_table,
-    display_chapters_table, view_details
+    display_chapters_table, view_details, project_overview
 )
 from .wizards import (
     get_character_input, get_plot_point_input, get_worldbuilding_element_input,
