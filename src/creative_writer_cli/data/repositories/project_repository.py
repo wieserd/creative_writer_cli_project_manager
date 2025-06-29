@@ -136,6 +136,8 @@ class ProjectRepository:
         elif export_extension == "zotero rdf":
             export_extension = "rdf"
         export_filename = f"{project_name}_export.{export_extension}"
+        if export_format in ["BibTeX", "RIS", "Zotero RDF"]:
+            export_filename = f"{project_name}_references_export.{export_extension}"
         with open(export_filename, "w") as f:
             f.write(output_content)
         return f"Project exported to {export_filename}"
