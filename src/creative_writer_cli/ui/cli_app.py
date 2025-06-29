@@ -82,10 +82,20 @@ class CLIApp:
             self.console.print("[bold yellow]No projects found.[/bold yellow]")
             return
 
-        project_to_view = questionary.select(
+        project_choices = []
+        for project_name in projects:
+            project_meta = self.project_repository.get_project_meta(project_name)
+            project_type = project_meta.get('type', 'Unknown Type')
+            project_choices.append(f"{project_name} ({project_type})")
+
+        project_to_view_display = questionary.select(
             "Select a project to view:",
-            choices=projects
+            choices=project_choices
         ).ask()
+
+        if project_to_view_display:
+            # Extract the actual project name from the display string
+            project_to_view = project_to_view_display.split(' (')[0]
 
         if project_to_view:
             self.project_menu(project_to_view)
