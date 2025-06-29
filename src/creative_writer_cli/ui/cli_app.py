@@ -2,7 +2,7 @@ import questionary
 from rich.console import Console
 import json
 
-from ..data.repositories import ProjectRepository
+from ..data.repositories.project_repository import ProjectRepository
 from ..core.templates import TEMPLATES
 from ..core.models import Character, PlotPoint, WorldbuildingElement, Theme, NoteIdea, Reference, Chapter
 from .display.tables import (
@@ -176,7 +176,7 @@ class CLIApp:
     def export_project_menu(self, project_name):
         export_format = questionary.select(
             "Select export format:",
-            choices=["Markdown", "JSON", "TXT"]
+            choices=["Markdown", "JSON", "TXT", "BibTeX", "RIS", "Zotero RDF"]
         ).ask()
 
         if export_format:

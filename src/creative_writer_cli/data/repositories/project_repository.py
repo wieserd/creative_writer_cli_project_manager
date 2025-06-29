@@ -3,9 +3,11 @@ import json
 import shutil
 from datetime import datetime
 
-from ..core.models import Character, PlotPoint, WorldbuildingElement, Theme, NoteIdea, Reference, Chapter, Project
-from ..core.templates import TEMPLATES
+from ...core.models import Character, PlotPoint, WorldbuildingElement, Theme, NoteIdea, Reference, Chapter, Project
+from ...core.templates import TEMPLATES
 from .json_store import JsonStore
+from ...utils import export_formatter, reference_export_formatter
+from ...utils.word_counter import calculate_word_count
 
 class ProjectRepository:
     def __init__(self, base_dir="projects"):
@@ -14,9 +16,7 @@ class ProjectRepository:
         if not os.path.exists(self.base_dir):
             os.makedirs(self.base_dir)
 
-    def _get_section_filepath(self, project_name, section_name):
-        sanitized_section_name = section_name.lower().replace(' ', '_').replace('/', '_')
-        return os.path.join(project_name, f"{sanitized_section_name}.json")
+    from ...utils.path_helpers import get_section_filepath
 
     def create_project(self, project_name: str, project_type: str) -> tuple[bool, str]:
         project_path = os.path.join(self.base_dir, project_name)
@@ -29,73 +29,7 @@ class ProjectRepository:
         self.json_store.write_json(os.path.join(project_name, "meta.json"), meta_data)
 
         for section in TEMPLATES[project_type]:
-            self.json_store.write_json(self._get_section_filepath(project_name, section), [])
-        
-        return True, f"Project '{project_name}' of type '{project_type}' created successfully."
-
-    def get_projects(self) -> list[str]:
-        # List directories directly within the base_dir
-        return [d for d in os.listdir(self.base_dir) if os.path.isdir(os.path.join(self.base_dir, d))]
-
-    def delete_project(self, project_name: str) -> tuple[bool, str]:
-        project_path = os.path.join(self.base_dir, project_name)
-        if os.path.exists(project_path):
-            shutil.rmtree(project_path)
-            return True, f"Project '{project_name}' deleted."
-        return False, "Project not found."
-
-    def get_project_meta(self, project_name: str) -> dict:
-        return self.json_store.read_json(os.path.join(project_name, "meta.json"))
-
-    def get_project_sections(self, project_name: str) -> list[str]:
-        meta = self.get_project_meta(project_name)
-        return TEMPLATES[meta['type']]
-
-    def get_section_content(self, project_name: str, section_name: str) -> list[dict]:
-        return self.json_store.read_json(self._get_section_filepath(project_name, section_name))
-
-    def save_section_content(self, project_name: str, section_name: str, data: list[dict]):
-        self.json_store.write_json(self._get_section_filepath(project_name, section_name), data)
-
-    def export_project(self, project_name: str, export_format: str) -> str:
-        project_abs_path = os.path.join(self.base_dir, project_name)
-        output_content = ""
-
-        all_files = os.listdir(project_abs_path)
-
-        import os
-import json
-import shutil
-from datetime import datetime
-
-from ..core.models import Character, PlotPoint, WorldbuildingElement, Theme, NoteIdea, Reference, Chapter, Project
-from ..core.templates import TEMPLATES
-from .json_store import JsonStore
-from ..utils import export_formatter
-
-class ProjectRepository:
-    def __init__(self, base_dir="projects"):
-        self.base_dir = base_dir
-        self.json_store = JsonStore(base_dir)
-        if not os.path.exists(self.base_dir):
-            os.makedirs(self.base_dir)
-
-    def _get_section_filepath(self, project_name, section_name):
-        sanitized_section_name = section_name.lower().replace(' ', '_').replace('/', '_')
-        return os.path.join(project_name, f"{sanitized_section_name}.json")
-
-    def create_project(self, project_name: str, project_type: str) -> tuple[bool, str]:
-        project_path = os.path.join(self.base_dir, project_name)
-        if os.path.exists(project_path):
-            return False, "Project with this name already exists."
-
-        os.makedirs(project_path)
-
-        meta_data = {"name": project_name, "type": project_type, "created": datetime.now().isoformat()}
-        self.json_store.write_json(os.path.join(project_name, "meta.json"), meta_data)
-
-        for section in TEMPLATES[project_type]:
-            self.json_store.write_json(self._get_section_filepath(project_name, section), [])
+            self.json_store.write_json(get_section_filepath(project_name, section), [])
         
         return True, f"Project '{project_name}' of type '{project_type}' created successfully."
 
@@ -177,15 +111,31 @@ class ProjectRepository:
                 content = self.get_section_content(project_name, section_name)
                 all_data[section_name.lower().replace(' ', '_')] = content
             output_content = json.dumps(all_data, indent=4)
+        elif export_format in ["BibTeX", "RIS", "Zotero RDF"]:
+            references_content = self.get_section_content(project_name, "References")
+            if not references_content:
+                return f"No references found in project '{project_name}' to export to {export_format}."
+
+            formatted_references = []
+            for ref in references_content:
+                if export_format == "BibTeX":
+                    formatted_references.append(reference_export_formatter.format_to_bibtex(ref))
+                elif export_format == "RIS":
+                    formatted_references.append(reference_export_formatter.format_to_ris(ref))
+                elif export_format == "Zotero RDF":
+                    formatted_references.append(reference_export_formatter.format_to_zotero_rdf(ref))
+            output_content = "\n\n".join(formatted_references)
 
         export_extension = export_format.lower()
         if export_extension == "markdown":
             export_extension = "md"
+        elif export_extension == "bibtex":
+            export_extension = "bib"
+        elif export_extension == "ris":
+            export_extension = "ris"
+        elif export_extension == "zotero rdf":
+            export_extension = "rdf"
         export_filename = f"{project_name}_export.{export_extension}"
-        with open(export_filename, "w") as f:
-            f.write(output_content)
-        return f"Project exported to {export_filename}"
-
         with open(export_filename, "w") as f:
             f.write(output_content)
         return f"Project exported to {export_filename}"
@@ -214,45 +164,6 @@ class ProjectRepository:
             return False, f"Error renaming project: {e}"
 
     def get_project_word_count(self, project_name: str) -> int:
-        total_words = 0
         project_meta = self.get_project_meta(project_name)
-        project_type = project_meta.get('type')
         sections = self.get_project_sections(project_name)
-
-        def _get_text_from_content(content, section_name, project_type):
-            text = ""
-            if isinstance(content, list):
-                for item in content:
-                    if isinstance(item, dict):
-                        if section_name == "Characters":
-                            text += item.get("Background", "") + " "
-                            text += item.get("Skills", "") + " "
-                            text += item.get("Positive Traits", "") + " "
-                            text += item.get("Negative Traits", "") + " "
-                        elif section_name == "Plot":
-                            text += item.get("Name", "") + " "
-                            text += item.get("Details", "") + " "
-                        elif section_name == "Worldbuilding":
-                            text += item.get("Description", "") + " "
-                            text += item.get("History/Lore", "") + " "
-                        elif section_name == "Themes":
-                            text += item.get("Description", "") + " "
-                        elif section_name == "Notes/Ideas":
-                            text += item.get("Content", "") + " "
-                        elif section_name == "References":
-                            # References are structured data, not typically counted for word count
-                            pass
-                        elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
-                            text += item.get("Chapter Content", "") + " "
-                    elif isinstance(item, str):
-                        text += item + " "
-            elif isinstance(content, str):
-                text += content + " "
-            return text
-
-        for section_name in sections:
-            content = self.get_section_content(project_name, section_name)
-            text_content = _get_text_from_content(content, section_name, project_type)
-            total_words += len(text_content.split())
-
-        return total_words
+        return calculate_word_count(project_name, project_meta, sections, self.get_section_content)

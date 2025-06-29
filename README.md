@@ -8,8 +8,8 @@ A minimalistic command-line interface (CLI) tool designed to help writers organi
 -   **Idea Capture:** Quickly jot down ideas, structured by project type (Novel, Poem, Scientific Article, Scientific Book, Other).
 -   **Project Management:** Organize your ideas and content within dedicated project structures.
 -   **Templates:** Guided input based on predefined templates for different writing types.
--   **Progress Overview:** See what sections are complete and what's still missing at a glance.
--   **Export Project:** Export your entire project content to Markdown, JSON, or TXT formats.
+-   **Progress Overview:** See what sections are complete, what's still missing, and the count of items (e.g., characters, plot points) at a glance. Includes a total word count for the project.
+-   **Export Project:** Export your entire project content to Markdown, JSON, TXT, BibTeX, RIS, or Zotero RDF formats.
 
 ### Enhanced Novel Project Sections
 
@@ -73,3 +73,31 @@ What do you want to do?
 ```
 
 Follow the prompts to create a new project, select its type, and start organizing your writing. For 'Novel' projects, explore the structured sections for Characters, Plot, Worldbuilding, Themes, and Notes/Ideas. For 'Scientific Article' projects, you can begin adding content to its specific sections and manage references.
+
+## Project Structure
+
+```
+creative_writer_cli_project_manager/
+├── src/
+│   ├── creative_writer_cli/
+│   │   ├── data/
+│   │   │   ├── repositories/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── json_store.py             # Handles low-level JSON file operations
+│   │   │   │   └── project_repository.py     # Manages project data (create, read, update, delete)
+│   │   │   └── __init__.py
+│   │   ├── ui/
+│   │   │   ├── cli_app.py                    # Main CLI application logic and menus
+│   │   │   ├── display/                      # Modules for displaying data (tables, views)
+│   │   │   └── wizards/                      # Modules for interactive user input (wizards)
+│   │   └── utils/
+│   │       ├── path_helpers.py               # Utility for constructing file paths
+│   │       ├── word_counter.py               # Logic for calculating word counts
+│   │       └── ...                           # Other utility modules (e.g., export_formatter)
+│   │   └── __init__.py
+│   ├── main.py                               # Application entry point
+│   └── projects/                             # Directory for storing user projects
+├── requirements.txt                          # Python dependencies
+├── run.sh                                    # Script to set up environment and run the application
+└── README.md                                 # This file
+```

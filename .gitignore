@@ -1,25 +1,48 @@
-# Byte-code files
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Virtual environment
 venv/
 
-# IDE-specific files (common examples)
+# IDE-specific files
 .idea/
 .vscode/
 *.sublime-project
 *.sublime-workspace
+*.iml
 
 # Operating System files
 .DS_Store
-.env
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs and temporary files
+*.log
+*.tmp
+*~
+#*#
+.fuse_hidden*
+*.swp
+*.swo
 
 # Project data (user-generated, not part of source code)
 projects/
-*.json
-*.txt
-*.md
-src/creative_writer_cli/ui/__pycache__/cli.cpython-312.pyc
-src/creative_writer_cli/core/__pycache__/templates.cpython-312.pyc
-src/creative_writer_cli/ui/__pycache__/display.cpython-312.pyc
+
+# Exported project files
+*_export.json
+*_export.txt
+*_export.md
+*_export.bib
+*_export.ris
+*_export.rdf

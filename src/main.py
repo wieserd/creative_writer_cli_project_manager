@@ -1,5 +1,5 @@
 import os
-from creative_writer_cli.data.repositories import ProjectRepository
+from creative_writer_cli.data.repositories.project_repository import ProjectRepository
 from creative_writer_cli.ui.cli_app import CLIApp
 
 def main():
