@@ -133,3 +133,12 @@ def display_chapters_table(data):
             chapter.get("Status", "N/A"),
         )
     console.print(table)
+
+def display_text_content(data):
+    if not data:
+        console.print("[yellow]No content found.[/yellow]")
+        return
+    if isinstance(data, list) and len(data) == 1 and isinstance(data[0], str):
+        console.print(data[0])
+    else:
+        console.print(json.dumps(data, indent=2))

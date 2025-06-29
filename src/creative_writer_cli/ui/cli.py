@@ -189,7 +189,7 @@ class CLI:
                 delete_action = "Delete Chapter Content"
                 view_details_action = "View Chapter Details"
             elif project_type in ["Scientific Article", "Scientific Book"] and section_name in ["Title", "Abstract", "Introduction", "Methods", "Results", "Discussion", "Conclusion"]:
-                self.console.print(json.dumps(data, indent=2))
+                display_text_content(data)
                 add_action = "Add Content"
                 edit_action = "Edit Content"
                 delete_action = "Delete Content"
@@ -236,7 +236,7 @@ class CLI:
                     new_item_data = get_chapter_input()
                     if new_item_data: data.append(new_item_data)
                 elif project_type in ["Scientific Article", "Scientific Book"] and section_name in ["Title", "Abstract", "Introduction", "Methods", "Results", "Discussion", "Conclusion"]:
-                    new_content = questionary.text("Enter content:").ask()
+                    new_content = questionary.text("Enter content:", multiline=True).ask()
                     if new_content: data = [new_content]
                 else:
                     new_item = questionary.text("Enter new item (in JSON format or simple text):").ask()
@@ -260,7 +260,7 @@ class CLI:
                 elif section_name == "References": selected_item_name = questionary.select("Select reference to edit:", choices=[item.get("Title", f"Reference {i}") for i, item in enumerate(data)]).ask()
                 elif section_name == "Chapter 1": selected_item_name = questionary.select("Select chapter to edit:", choices=[item.get("Chapter Title", f"Chapter {i}") for i, item in enumerate(data)]).ask()
                 elif project_type in ["Scientific Article", "Scientific Book"] and section_name in ["Title", "Abstract", "Introduction", "Methods", "Results", "Discussion", "Conclusion"]:
-                    new_content = questionary.text("Edit content:", default=data[0] if data else "").ask()
+                    new_content = questionary.text("Edit content:", default=data[0] if data else "", multiline=True).ask()
                     if new_content:
                         data = [new_content]
                         self.project_repository.save_section_content(project_name, section_name, data)
