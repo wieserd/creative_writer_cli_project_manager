@@ -54,3 +54,4 @@ projects/
 
 #Gemini
 Gemini_instructions.md
+*.pyc
