@@ -23,7 +23,7 @@ class CLIApp:
         while True:
             choice = questionary.select(
                 "What do you want to do?",
-                choices=["Create New Project", "View Existing Projects", "Delete Project", "Configure Project Directory", "Exit"]
+                choices=["Create New Project", "View Existing Projects", "Delete Project", "Import General Notes", "Configure Project Directory", "Exit"]
             ).ask()
 
             if choice == "Create New Project":
@@ -32,6 +32,8 @@ class CLIApp:
                 self.view_projects()
             elif choice == "Delete Project":
                 self.delete_project()
+            elif choice == "Import General Notes":
+                self.import_general_notes()
             elif choice == "Configure Project Directory":
                 self._configure_project_directory()
             elif choice == "Exit" or choice is None:
@@ -39,6 +41,51 @@ class CLIApp:
                     break
                 else:
                     continue # If user says no, continue the loop and show main menu again
+
+    def import_general_notes(self):
+        if not self._validate_project_directory():
+            return
+
+        import_choice = questionary.select(
+            "Do you want to import a single note or multiple notes?",
+            choices=["Import Single Note", "Import Multiple Notes (Coming Soon)"]
+        ).ask()
+
+        if import_choice == "Import Single Note":
+            file_path = questionary.text("Enter the absolute path to the .txt file:").ask()
+            if not file_path:
+                self.console.print("[bold red]File path cannot be empty.[/bold red]")
+                return
+            
+            if not os.path.exists(file_path):
+                self.console.print(f"[bold red]Error: File not found at {file_path}[/bold red]")
+                return
+            
+            if not file_path.lower().endswith(".txt"):
+                self.console.print("[bold red]Error: Only .txt files are supported for import.[/bold red]")
+                return
+
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+            except Exception as e:
+                self.console.print(f"[bold red]Error reading file: {e}[/bold red]")
+                return
+
+            project_name = os.path.splitext(os.path.basename(file_path))[0]
+            project_type = "General Notes"
+
+            success, message = self.project_repository.create_project(project_name, project_type)
+            if success:
+                self.console.print(f"[bold green]{message}[/bold green]")
+                # Add content to the 'Notes' section of the new project
+                self.project_repository.save_section_content(project_name, "Notes", content)
+                self.console.print(f"[bold green]Content from {os.path.basename(file_path)} imported into '{project_name}' project.[/bold green]")
+            else:
+                self.console.print(f"[bold red]{message}[/bold red]")
+        elif import_choice == "Import Multiple Notes (Coming Soon)":
+            self.console.print("[bold yellow]Importing multiple notes is not yet implemented. Please select 'Import Single Note'.[/bold yellow]")
+            return
 
     def _configure_project_directory(self):
         self.console.print("\n[bold]Configure Project Directory[/bold]")

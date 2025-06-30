@@ -1,5 +1,6 @@
 # Python
-__pycache__/
+/__pycache__/
+/__pycache__
 *.pyc
 *.pyo
 *.pyd
@@ -46,3 +47,9 @@ projects/
 *_export.bib
 *_export.ris
 *_export.rdf
+
+#project files
+/my_proj
+
+#Gemini
+Gemini_instructions.md
