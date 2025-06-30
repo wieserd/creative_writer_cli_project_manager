@@ -25,7 +25,7 @@ class CLIApp:
         while True:
             choice = questionary.select(
                 "What do you want to do?",
-                choices=["Create New Project", "View Existing Projects", "Delete Project", "Import General Notes", "Add Note to Notebook", "Configure Project Directory", "Exit"]
+                choices=["Create New Project", "View Existing Projects", "Delete Project", "Import General Notes", "Add Note to Notebook", "Merge Notebooks", "Configure Project Directory", "Exit"]
             ).ask()
 
             if choice == "Create New Project":
@@ -40,6 +40,8 @@ class CLIApp:
                 self.note_import_service.import_general_notes() # Delegate to the new service
             elif choice == "Add Note to Notebook":
                 self._add_note_to_notebook()
+            elif choice == "Merge Notebooks":
+                self._merge_notebooks()
             elif choice == "Configure Project Directory":
                 self._configure_project_directory()
             elif choice == "Exit" or choice is None:
@@ -105,7 +107,48 @@ class CLIApp:
         else:
             self.console.print(f"[bold red]Error adding note to notebook: {message}[/bold red]")
 
-    def _configure_project_directory(self):
+    def _merge_notebooks(self):
+        if not self._validate_project_directory():
+            return
+
+        all_projects = self.project_repository.get_projects()
+        notebook_projects = [p for p in all_projects if self.project_repository.get_project_meta(p).get('type') == "Notebook"]
+
+        if len(notebook_projects) < 2:
+            self.console.print("[bold yellow]You need at least two Notebook projects to merge.[/bold yellow]")
+            return
+
+        source_notebook = questionary.select(
+            "Select the Notebook to merge FROM (this Notebook will be deleted):",
+            choices=notebook_projects
+        ).ask()
+
+        if not source_notebook:
+            self.console.print("[yellow]Operation cancelled.[/yellow]")
+            return
+
+        # Remove source notebook from choices for target notebook
+        target_notebook_choices = [nb for nb in notebook_projects if nb != source_notebook]
+
+        target_notebook = questionary.select(
+            f"Select the Notebook to merge '{source_notebook}' INTO (this Notebook will receive the sections):",
+            choices=target_notebook_choices
+        ).ask()
+
+        if not target_notebook:
+            self.console.print("[yellow]Operation cancelled.[/yellow]")
+            return
+
+        if questionary.confirm(f"Are you sure you want to merge '{source_notebook}' into '{target_notebook}'? '{source_notebook}' will be deleted.").ask():
+            success, message = self.project_repository.merge_notebooks(source_notebook, target_notebook)
+            if success:
+                self.console.print(f"[bold green]{message}[/bold green]")
+            else:
+                self.console.print(f"[bold red]{message}[/bold red]")
+        else:
+            self.console.print("[yellow]Merge operation cancelled.[/yellow]")
+
+    def _configure_project_directory():
         self.console.print("\n[bold]Configure Project Directory[/bold]")
         new_path = prompt_for_project_directory(self.project_repository.base_dir)
         if new_path is None: # User cancelled (Ctrl+C)

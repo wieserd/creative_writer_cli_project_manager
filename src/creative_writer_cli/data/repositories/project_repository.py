@@ -186,6 +186,49 @@ class ProjectRepository:
         except Exception as e:
             return False, f"Error renaming project: {e}"
 
+    def merge_notebooks(self, source_notebook_name: str, target_notebook_name: str) -> tuple[bool, str]:
+        # Validate source notebook exists and is a Notebook
+        source_meta = self.get_project_meta(source_notebook_name)
+        if not source_meta or source_meta.get('type') != "Notebook":
+            return False, f"Source project '{source_notebook_name}' not found or is not a Notebook."
+
+        # Validate target notebook exists and is a Notebook
+        target_meta = self.get_project_meta(target_notebook_name)
+        if not target_meta or target_meta.get('type') != "Notebook":
+            return False, f"Target project '{target_notebook_name}' not found or is not a Notebook."
+
+        # Get all sections from the source notebook
+        source_sections = self.get_project_sections(source_notebook_name)
+
+        # Transfer each section to the target notebook
+        for section_name in source_sections:
+            # Skip the default 'Introduction' section if it's empty in the source
+            if section_name == "Introduction" and not self.get_section_content(source_notebook_name, section_name):
+                continue
+            
+            content = self.get_section_content(source_notebook_name, section_name)
+            
+            # Attempt to add the section to the target notebook
+            # If a section with the same name already exists, append content or handle as needed
+            # For now, we'll try to add. If it fails due to name conflict, we'll report it.
+            success, message = self.add_section_to_project(target_notebook_name, section_name, content)
+            if not success:
+                # If section already exists, try to append content (simple concatenation for text)
+                if "already exists" in message:
+                    existing_content = self.get_section_content(target_notebook_name, section_name)
+                    new_content = f"{existing_content}\n\n--- Merged from {source_notebook_name} ---\n\n{content}"
+                    self.save_section_content(target_notebook_name, section_name, new_content)
+                    # No need to report success here, as it's handled by the final message
+                else:
+                    return False, f"Failed to merge section '{section_name}' from '{source_notebook_name}' to '{target_notebook_name}': {message}"
+
+        # Delete the source notebook after successful transfer
+        delete_success, delete_message = self.delete_project(source_notebook_name)
+        if not delete_success:
+            return False, f"Successfully merged sections, but failed to delete source notebook '{source_notebook_name}': {delete_message}"
+
+        return True, f"Notebook '{source_notebook_name}' successfully merged into '{target_notebook_name}'. '{source_notebook_name}' has been deleted."
+
     def get_project_word_count(self, project_name: str) -> int:
         project_meta = self.get_project_meta(project_name)
         sections = self.get_project_sections(project_name)
