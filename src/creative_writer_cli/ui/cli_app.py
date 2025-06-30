@@ -180,7 +180,7 @@ class CLIApp:
         ).ask()
 
         if project_to_delete:
-            if questionary.confirm(f"Are you sure you want to delete the project '{project_to_delete}'?").ask():
+            if questionary.confirm(f"Are you sure you want to delete the project '{project_to_delete}'?", default=False).ask():
                 success, message = self.project_repository.delete_project(project_to_delete)
                 if success:
                     self.console.print(f"[bold green]{message}[/bold green]")
