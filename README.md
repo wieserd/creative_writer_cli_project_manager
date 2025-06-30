@@ -110,7 +110,7 @@ creative_writer_cli_project_manager/
 ├── .gitignore                          # Specifies intentionally untracked files to ignore
 ├── LICENSE                             # Project license file
 ├── README.md                           # Project documentation
-├── requirements.txt                    # Python dependencies
+
 ├── run.sh                              # Script to set up environment and run the application
 └── venv/                               # Python virtual environment (created by run.sh)
 ```

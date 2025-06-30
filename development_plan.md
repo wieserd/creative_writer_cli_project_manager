@@ -1,25 +1,114 @@
-**Development Plan: Resolve Duplicate File Entries**
+**Development Plan: Convert to Python Package**
 
-**1. Confirm File Duplication:**
-    *   Verify the physical existence of `json_store.py` and `project_repository.py` in both `/src/creative_writer_cli/data/` and `/src/creative_writer_cli/data/repositories/`. (Already confirmed via `list_directory` output).
+**Goal:** Transform the current CLI application into a distributable Python package, enabling installation via `pip` and easier sharing.
 
-**2. Analyze File Content for Differences:**
-    *   Read the content of `json_store.py` from both `/src/creative_writer_cli/data/json_store.py` and `/src/creative_writer_cli/data/repositories/json_store.py`.
-    *   Read the content of `project_repository.py` from both `/src/creative_writer_cli/data/project_repository.py` and `/src/creative_writer_cli/data/repositories/project_repository.py`.
-    *   Compare the contents to determine if they are identical.
+**1. Project Setup for Packaging:**
+    *   **`pyproject.toml` (Modern Packaging Standard):** Create a `pyproject.toml` file at the root of the project. This file will define project metadata, dependencies, and build system. This is the preferred modern approach over `setup.py` and `setup.cfg`.
+        *   Define `[project]` section: `name`, `version`, `description`, `readme`, `requires-python`, `dependencies`, `authors`, `keywords`, `classifiers`.
+        *   Define `[project.scripts]` for the CLI entry point (e.g., `creative-writer = creative_writer_cli.cli:main`).
+        *   Define `[build-system]` to specify `setuptools` or `hatchling` as the backend. `setuptools` is a common choice.
+    *   **`src/` Layout:** Ensure the project adheres to the `src/` layout (which it already does, with `src/creative_writer_cli`). This is a best practice for packaging.
 
-**3. Trace File Usage (Imports):**
-    *   Search the entire `src/creative_writer_cli/` directory for import statements related to `json_store` and `project_repository`.
-    *   Identify which specific paths are being imported (e.g., `from creative_writer_cli.data import json_store` vs. `from creative_writer_cli.data.repositories import json_store`). This will reveal which set of files (if any) is actively being used by the application.
+**2. Refine `creative_writer_cli` Module:**
+    *   **`__init__.py` files:** Ensure all subdirectories within `src/creative_writer_cli` (e.g., `data`, `ui`, `utils`, `core`, `data/repositories`, `ui/display`, `ui/wizards`) have `__init__.py` files to mark them as Python packages. (Already present based on previous `list_directory` outputs).
+    *   **Main Entry Point:** The `main.py` file in `src/main.py` should be moved into the `creative_writer_cli` package, perhaps as `src/creative_writer_cli/__main__.py` or `src/creative_writer_cli/cli.py`, and its main function should be exposed for the `[project.scripts]` entry point. I'll choose `src/creative_writer_cli/cli.py` and update `main.py` to call it.
 
-**4. Determine Root Cause and Solution:**
-    *   **Scenario A: Files are identical and only one path is imported.** This indicates a redundant copy. The solution will be to delete the unused duplicate files and update the `README.md`.
-    *   **Scenario B: Files are identical but both paths are imported.** This indicates a misconfiguration or redundant imports. The solution will be to consolidate imports to a single path, delete the redundant files, and update the `README.md`.
-    *   **Scenario C: Files are different.** This would be highly unusual for files with the same name and similar apparent function. If this is the case, I will need to analyze the differences and their implications before proposing a solution. (Less likely, but important to check).
+**3. Dependency Management:**
+    *   **`requirements.txt` to `pyproject.toml`:** Migrate all dependencies from `requirements.txt` to the `dependencies` list in `pyproject.toml`. `requirements.txt` can then be used for development environment setup (e.g., `pip install -r requirements.txt` after `pip install .`).
+    *   **Pinning Versions:** Consider pinning exact versions for dependencies in `pyproject.toml` for reproducibility, especially for a distributable package.
 
-**5. Implement Solution (if applicable):**
-    *   If redundant files are identified, use `run_shell_command` to safely remove them.
-    *   If import paths need to be updated, use `replace` to modify the relevant files.
+**4. Testing (Pre-packaging):**
+    *   **Unit Tests:** If not already present, write unit tests for core functionalities (e.g., `JsonStore`, `ProjectRepository`, `word_counter`). This is crucial for maintaining code quality and ensuring the package works as expected after refactoring.
+    *   **Test Runner:** Identify or set up a test runner (e.g., `pytest`).
 
-**6. Update `README.md`:**
-    *   Once the actual file system and code structure are corrected, update the `README.md` to accurately reflect the non-duplicated project structure.
+**5. Build and Distribution:**
+    *   **Build Wheel and Source Distribution:** Use `build` (or `setuptools` directly) to create a wheel (`.whl`) and a source distribution (`.tar.gz`).
+        *   `python -m build`
+    *   **Local Installation Test:** Install the package locally using `pip install .` (from the project root) or `pip install dist/*.whl` to verify installation and functionality.
+    *   **`run.sh` Update:** Modify `run.sh` to install the package locally and then run the CLI entry point.
+
+**6. Documentation and Metadata:**
+    *   **`README.md`:** Ensure `README.md` is up-to-date with installation instructions for the package (using `pip`).
+    *   **License:** Confirm the `LICENSE` file is present and correctly referenced in `pyproject.toml`.
+    *   **`CHANGELOG.md` (Optional but Recommended):** Start a `CHANGELOG.md` to track changes for future releases.
+
+**7. Version Control:**
+    *   **Git Tagging:** Use Git tags for releases (e.g., `git tag v1.0.0`).
+
+**Detailed Steps & Commands:**
+
+*   **Create `pyproject.toml`:**
+    ```toml
+    [project]
+    name = "creative-writer-cli"
+    version = "0.1.0"
+    description = "A minimalistic CLI tool for creative writing project management."
+    readme = "README.md"
+    requires-python = ">=3.8"
+    license = { file = "LICENSE" }
+    authors = [
+        { name = "Daniel Wieser", email = "your.email@example.com" } # Replace with actual author info
+    ]
+    keywords = ["cli", "writing", "project-management", "creative"]
+    classifiers = [
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License", # Assuming MIT based on LICENSE file
+        "Operating System :: OS Independent",
+        "Environment :: Console",
+        "Intended Audience :: End Users/Desktop",
+        "Topic :: Text Processing :: General",
+    ]
+    dependencies = [
+        "markdown-it-py==3.0.0",
+        "mdurl==0.1.2",
+        "prompt_toolkit==3.0.51",
+        "Pygments==2.19.2",
+        "questionary==2.1.0",
+        "rich==14.0.0",
+        "wcwidth==0.2.13",
+        "requests",
+    ]
+
+    [project.scripts]
+    creative-writer = "creative_writer_cli.cli:main" # New entry point
+
+    [build-system]
+    requires = ["setuptools>=61.0"]
+    build-backend = "setuptools.build_meta"
+    ```
+
+*   **Move `main.py`:**
+    *   Rename `src/main.py` to `src/creative_writer_cli/cli.py`.
+    *   Modify `src/creative_writer_cli/cli.py` to have a `main()` function that contains the CLI application logic.
+
+*   **Update `run.sh`:**
+    ```bash
+    #!/bin/bash
+
+    # Determine the directory where the script is located
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+    PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+    # Navigate to the project root
+    cd "$PROJECT_ROOT" || exit
+
+    # Create a virtual environment if it doesn't exist
+    if [ ! -d "venv" ]; then
+        echo "Creating virtual environment..."
+        python3 -m venv venv
+    fi
+
+    # Activate the virtual environment
+    source venv/bin/activate
+
+    # Install the package in editable mode
+    echo "Installing/Updating package dependencies..."
+    pip install -e .
+
+    # Run the CLI application
+    echo "Starting Creative Writer CLI..."
+    creative-writer
+    ```
+
+*   **Remove `requirements.txt` (Optional, but good practice once dependencies are in `pyproject.toml`):**
+    *   `rm requirements.txt`
