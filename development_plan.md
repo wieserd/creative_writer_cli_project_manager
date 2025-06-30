@@ -147,8 +147,17 @@ To streamline the process of publishing new versions, set up CI/CD.
 
 *   **Action:**
     *   **GitHub Actions (Recommended):** Create a GitHub Actions workflow (`.github/workflows/publish.yml`) that automatically runs tests and, upon a new tag or release, builds and uploads your package to PyPI. SUCCESS
+
+#### 5. One-Liner Execution from GitHub:
+
+*   **Action:**
+    *   **Create `run_from_github.sh` script:** This script will allow users to run the CLI directly from GitHub with a single command.
+    *   **Update `README.md`:** Add instructions for using the `run_from_github.sh` script.
 *   **Benefits:**
-    *   Automated testing ensures quality.
-    *   Automated publishing reduces manual effort and errors.
-    *   Automated publishing reduces manual effort and errors.
-    *   Users get access to the latest versions quickly.
+    *   Provides a quick and easy way for users to try out the CLI without a full installation.
+    *   Mirrors the `npx` experience for Python projects.
+
+*   **Automated testing ensures quality.
+*   Automated publishing reduces manual effort and errors.
+*   Automated publishing reduces manual effort and errors.
+*   Users get access to the latest versions quickly.
