@@ -43,18 +43,70 @@ No errors currently known.
 
 ## Installation and Usage
 
-To run the Creative Writer CLI Project Manager, follow these steps:
+The `creative_writer_cli` can be installed and run in several ways:
 
-1.  **Clone or download the project:**
-    Obtain the project files and navigate into the `creative_writer_cli_project_manager` directory.
+### 1. Using `pipx` (Recommended for CLI Applications)
 
-2.  **Run the application:**
-    Execute the provided `run.sh` script. This script will automatically create a Python virtual environment, install all necessary dependencies, and then start the CLI application.
-    ```bash
-    ./run.sh
-    ```
+`pipx` installs Python applications into isolated environments to prevent dependency conflicts, making it ideal for CLI tools.
 
-    *(If `./run.sh` does not work, you might need to give it execute permissions first: `chmod +x ./run.sh`)*
+```bash
+# First, install pipx if you don't have it
+pip install pipx
+pipx ensurepath # Ensures pipx-installed apps are on your PATH
+
+# Install the creative-writer-cli
+pipx install creative-writer-cli
+
+# Run the application
+creative-writer
+```
+
+### 2. Using `pip` (Standard Python Package Installation)
+
+You can install the package directly using `pip` within a virtual environment.
+
+```bash
+# Create and activate a virtual environment
+python3 -m venv my_writer_env
+source my_writer_env/bin/activate
+
+# Install the package
+pip install creative-writer-cli
+
+# Run the application
+creative-writer
+```
+
+### 3. Running from Source (for Development or Quick Start)
+
+If you want to run the application directly from the cloned repository, you can use the provided `run.sh` script. This script will set up a virtual environment, install dependencies, and start the CLI.
+
+```bash
+# Clone the repository (if you haven't already)
+git clone https://github.com/YOUR_GITHUB_USERNAME/creative_writer_cli_project_manager.git # Replace with your actual repo URL
+cd creative_writer_cli_project_manager
+
+# Run the setup script
+./run.sh
+```
+*(If `./run.sh` does not work, you might need to give it execute permissions first: `chmod +x ./run.sh`)*
+
+### 4. Installing from Git Repository (for specific branches or pre-release versions)
+
+You can also install directly from the GitHub repository using `pip`.
+
+```bash
+# Create and activate a virtual environment
+python3 -m venv my_writer_env
+source my_writer_env/bin/activate
+
+# Install directly from GitHub
+pip install git+https://github.com/YOUR_GITHUB_USERNAME/creative_writer_cli_project_manager.git # Replace with your actual repo URL
+
+# Run the CLI tool
+creative-writer
+```
+
 
 ## Portability
 

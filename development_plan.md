@@ -11,7 +11,7 @@
 
 **2. Refine `creative_writer_cli` Module:**
     *   **`__init__.py` files:** Ensure all subdirectories within `src/creative_writer_cli` (e.g., `data`, `ui`, `utils`, `core`, `data/repositories`, `ui/display`, `ui/wizards`) have `__init__.py` files to mark them as Python packages. (Already present based on previous `list_directory` outputs).
-    *   **Main Entry Point:** The `main.py` file in `src/main.py` should be moved into the `creative_writer_cli` package, perhaps as `src/creative_writer_cli/__main__.py` or `src/creative_writer_cli/cli.py`, and its main function should be exposed for the `[project.scripts]` entry point. I'll choose `src/creative_writer_cli/cli.py` and update `main.py` to call it.
+    *   **Main Entry Point:** The `main.py` file in `src/main.writer_cli.cli.py` and its main function should be exposed for the `[project.scripts]` entry point. I'll choose `src/creative_writer_cli/cli.py` and update `main.py` to call it.
 
 **3. Dependency Management:**
     *   **`requirements.txt` to `pyproject.toml`:** Migrate all dependencies from `requirements.txt` to the `dependencies` list in `pyproject.toml`. `requirements.txt` can then be used for development environment setup (e.g., `pip install -r requirements.txt` after `pip install .`).
@@ -112,3 +112,43 @@
 
 *   **Remove `requirements.txt` (Optional, but good practice once dependencies are in `pyproject.toml`):**
     *   `rm requirements.txt`
+
+**Detailed Plan for Improving Distribution and Ease of Use**
+
+To make your `creative_writer_cli` project as accessible and easy to run as possible, here's a multi-pronged approach:
+
+#### 1. Publish to PyPI (Python Package Index) - The Standard Way:
+
+This is the most crucial step for broad distribution. Once on PyPI, users can simply `pip install` your package.
+
+*   **Action:**
+    *   **Register on PyPI:** SUCCESS
+    *   **Build Distribution Files:** SUCCESS
+    *   **Upload to TestPyPI (First):** SUCCESS
+    *   **Upload to PyPI (Once confident):** SUCCESS
+
+#### 2. Recommend `pipx` - The Python Equivalent of `npx`:
+
+`pipx` is a fantastic tool specifically designed for installing and running Python applications in isolated environments, much like `npx` for Node.js. It's ideal for CLI tools.
+
+*   **Action:**
+    *   **Add `pipx` to your `README.md`'s installation instructions.** SUCCESS
+
+#### 3. Improve GitHub README for Direct Git Installation:
+
+Even with PyPI, some users might prefer to install directly from your GitHub repository.
+
+*   **Action:**
+    *   **Update `README.md`:** Clearly show how to install directly from Git. SUCCESS
+
+#### 4. Continuous Integration/Deployment (CI/CD) for Automation:
+
+To streamline the process of publishing new versions, set up CI/CD.
+
+*   **Action:**
+    *   **GitHub Actions (Recommended):** Create a GitHub Actions workflow (`.github/workflows/publish.yml`) that automatically runs tests and, upon a new tag or release, builds and uploads your package to PyPI. SUCCESS
+*   **Benefits:**
+    *   Automated testing ensures quality.
+    *   Automated publishing reduces manual effort and errors.
+    *   Automated publishing reduces manual effort and errors.
+    *   Users get access to the latest versions quickly.
