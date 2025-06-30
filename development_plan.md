@@ -4,15 +4,15 @@
 
 **Phase 1: Refactor `CLIApp` and UI Logic**
 
-*   **1.1 Create `src/creative_writer_cli/ui/services/` directory:** This directory will house new service classes that encapsulate complex UI interaction logic, reducing the burden on `CLIApp`.
+*   **1.1 Create `src/creative_writer_cli/ui/services/` directory:** This directory will house new service classes that encapsulate complex UI interaction logic, reducing the burden on `CLIApp`. SUCCESS
 *   **1.2 Create `src/creative_writer_cli/ui/services/project_interaction_service.py`:**
     *   Move the `project_menu`, `rename_project`, `view_edit_sections`, `export_project_menu`, `edit_section`, and `export_references_menu` methods from `CLIApp` into a new `ProjectInteractionService` class.
     *   This service will take `project_repository` and `console` as dependencies.
-    *   `CLIApp` will then instantiate and delegate to this service.
+    *   `CLIApp` will then instantiate and delegate to this service. SUCCESS
 *   **1.3 Update `src/creative_writer_cli/ui/cli_app.py`:**
     *   Import the new `ProjectInteractionService`.
     *   Modify `CLIApp` to instantiate `ProjectInteractionService` and call its methods.
-    *   Keep `main_menu`, `create_project`, `view_projects`, `delete_project`, and `_configure_project_directory` in `CLIApp` as they represent the top-level application flow.
+    *   Keep `main_menu`, `create_project`, `view_projects`, `delete_project`, and `_configure_project_directory` in `CLIApp` as they represent the top-level application flow. SUCCESS
 *   **1.4 Refactor `edit_section` logic (within `ProjectInteractionService`):**
     *   The `edit_section` method is still quite large due to the many `if/elif` blocks for different section types. Consider creating a `SectionEditor` class or a dictionary of handlers for each section type to further modularize this. (This might be a follow-up refactoring if the initial move is too large).
 
