@@ -1,29 +1,64 @@
 import questionary
 from rich.console import Console
-import json
 
 from ...data.repositories.project_repository import ProjectRepository
 from ...core.templates import TEMPLATES
-from ...core.models import Character, PlotPoint, WorldbuildingElement, Theme, NoteIdea, Reference, Chapter
-from ..display.tables import (
-    display_character_table, display_plot_table, display_worldbuilding_table,
-    display_themes_table, display_notes_table, display_references_table,
-    display_chapters_table
-)
-from ..display.views import view_details, display_text_content, project_overview
-from ..wizards.novel_wizards import (
-    get_character_input, get_plot_point_input, get_worldbuilding_element_input,
-    get_theme_input, get_note_idea_input
-)
-from ..wizards.scientific_wizards import (
-    get_reference_input, get_chapter_input
-)
-from ..wizards.generic_wizards import get_simple_text_input
+
+# Import all new section handlers
+from ..section_handlers.character_handler import CharacterHandler
+from ..section_handlers.plot_handler import PlotHandler
+from ..section_handlers.worldbuilding_handler import WorldbuildingHandler
+from ..section_handlers.theme_handler import ThemeHandler
+from ..section_handlers.notes_handler import NotesHandler
+from ..section_handlers.reference_handler import ReferenceHandler
+from ..section_handlers.scientific_text_handler import ScientificTextHandler
+from ..section_handlers.chapter_handler import ChapterHandler
+from ..section_handlers.generic_handler import GenericHandler
+
+# Re-import project_overview from display.views as it's still used in project_menu
+from ..display.views import project_overview
+
 
 class ProjectInteractionService:
     def __init__(self, project_repository: ProjectRepository, console: Console):
         self.project_repository = project_repository
         self.console = console
+        self.section_handlers = {
+            "Novel": {
+                "Characters": CharacterHandler,
+                "Plot": PlotHandler,
+                "Worldbuilding": WorldbuildingHandler,
+                "Themes": ThemeHandler,
+                "Notes/Ideas": NotesHandler,
+            },
+            "Scientific Article": {
+                "References": ReferenceHandler,
+                "Title": ScientificTextHandler,
+                "Abstract": ScientificTextHandler,
+                "Introduction": ScientificTextHandler,
+                "Methods": ScientificTextHandler,
+                "Results": ScientificTextHandler,
+                "Discussion": ScientificTextHandler,
+                "Conclusion": ScientificTextHandler, # Assuming Conclusion is also a scientific text section
+            },
+            "Scientific Book": {
+                "References": ReferenceHandler,
+                "Title": ScientificTextHandler,
+                "Abstract": ScientificTextHandler,
+                "Introduction": ScientificTextHandler,
+                "Methods": ScientificTextHandler,
+                "Results": ScientificTextHandler,
+                "Discussion": ScientificTextHandler,
+                "Conclusion": ScientificTextHandler,
+                "Chapter 1": ChapterHandler,
+                "Chapter 2": ChapterHandler,
+                "Chapter 3": ChapterHandler,
+                # Add more chapters as needed
+            },
+            # Add other project types and their sections here
+        }
+        # Default handler for any section not explicitly defined
+        self.default_handler = GenericHandler
 
     def project_menu(self, project_name):
         while True:
@@ -87,80 +122,20 @@ class ProjectInteractionService:
             self.console.print(f"[bold green]{message}[/bold green]")
 
     def edit_section(self, project_name, section_name):
+        project_meta = self.project_repository.get_project_meta(project_name)
+        project_type = project_meta.get('type')
+
+        # Determine the appropriate handler
+        handler_class = self.section_handlers.get(project_type, {}).get(section_name, self.default_handler)
+        handler = handler_class(self.project_repository, self.console)
+
         while True:
             data = self.project_repository.get_section_content(project_name, section_name)
             self.console.print(f"\n[bold]Editing: {section_name}[/bold]")
 
-            # Determine choices based on section_name and project_type
-            project_meta = self.project_repository.get_project_meta(project_name)
-            project_type = project_meta.get('type')
+            handler.display_content(data)
 
-            choices = ["Back to Project Menu"]
-            add_action = None
-            edit_action = None
-            delete_action = None
-            view_details_action = None
-
-            if section_name == "Characters":
-                display_character_table(data)
-                add_action = "Add Character"
-                edit_action = "Edit Character"
-                delete_action = "Delete Character"
-                view_details_action = "View Character Details"
-            elif section_name == "Plot":
-                display_plot_table(data)
-                add_action = "Add Plot Point"
-                edit_action = "Edit Plot Point"
-                delete_action = "Delete Plot Point"
-                view_details_action = "View Plot Point Details"
-            elif section_name == "Worldbuilding":
-                display_worldbuilding_table(data)
-                add_action = "Add Worldbuilding Element"
-                edit_action = "Edit Worldbuilding Element"
-                delete_action = "Delete Worldbuilding Element"
-                view_details_action = "View Worldbuilding Element Details"
-            elif section_name == "Themes":
-                display_themes_table(data)
-                add_action = "Add Theme"
-                edit_action = "Edit Theme"
-                delete_action = "Delete Theme"
-                view_details_action = "View Theme Details"
-            elif section_name == "Notes/Ideas":
-                display_notes_table(data)
-                add_action = "Add Note/Idea"
-                edit_action = "Edit Note/Idea"
-                delete_action = "Delete Note/Idea"
-                view_details_action = "View Note/Idea Details"
-            elif section_name == "References":
-                display_references_table(data)
-                add_action = "Add Reference"
-                edit_action = "Edit Reference"
-                delete_action = "Delete Reference"
-                view_details_action = "View Reference Details"
-                if project_type == "Scientific Article":
-                    choices.insert(0, "Export References") # Add export option for scientific articles
-            elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
-                display_chapters_table(data)
-                add_action = "Add Chapter Content"
-                edit_action = "Edit Chapter Content"
-                delete_action = "Delete Chapter Content"
-                view_details_action = "View Chapter Details"
-            elif project_type in ["Scientific Article", "Scientific Book"] and section_name in ["Title", "Abstract", "Introduction", "Methods", "Results", "Discussion", "Conclusion"]:
-                display_text_content(data)
-                add_action = "Add Content"
-                edit_action = "Edit Content"
-                delete_action = "Delete Content"
-            else:
-                self.console.print(json.dumps(data, indent=2))
-                add_action = "Add Item"
-                edit_action = "Edit Item"
-                delete_action = "Delete Item"
-            
-            if add_action: choices.insert(0, add_action)
-            if edit_action: choices.insert(1, edit_action)
-            if delete_action: choices.insert(2, delete_action)
-            if view_details_action: choices.insert(3, view_details_action)
-
+            choices = handler.get_choices(data)
             action = questionary.select(
                 "What do you want to do?",
                 choices=choices
@@ -169,154 +144,4 @@ class ProjectInteractionService:
             if action == "Back to Project Menu" or action is None:
                 break
 
-            # Handle actions
-            if action == add_action:
-                if section_name == "Characters":
-                    new_item_data = get_character_input()
-                    if new_item_data: data.append(new_item_data)
-                elif section_name == "Plot":
-                    new_item_data = get_plot_point_input()
-                    if new_item_data: data.append(new_item_data)
-                elif section_name == "Worldbuilding":
-                    new_item_data = get_worldbuilding_element_input()
-                    if new_item_data: data.append(new_item_data)
-                elif section_name == "Themes":
-                    new_item_data = get_theme_input()
-                    if new_item_data: data.append(new_item_data)
-                elif section_name == "Notes/Ideas":
-                    new_item_data = get_note_idea_input()
-                    if new_item_data: data.append(new_item_data)
-                elif section_name == "References":
-                    new_item_data = get_reference_input()
-                    if new_item_data: data.append(new_item_data)
-                elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
-                    new_item_data = get_chapter_input()
-                    if new_item_data: data.append(new_item_data)
-                elif project_type in ["Scientific Article", "Scientific Book"] and section_name in ["Title", "Abstract", "Introduction", "Methods", "Results", "Discussion", "Conclusion"]:
-                    new_content = get_simple_text_input("Enter content:")
-                    if new_content: data = [new_content]
-                else:
-                    new_item = questionary.text("Enter new item (in JSON format or simple text):").ask()
-                    if new_item:
-                        try: data.append(json.loads(new_item))
-                        except json.JSONDecodeError: data.append(new_item)
-                self.project_repository.save_section_content(project_name, section_name, data)
-                self.console.print(f"[green]{add_action.replace('Add ', '')} added.[/green]")
-
-            elif action == edit_action:
-                if not data:
-                    self.console.print("[yellow]No items to edit.[/yellow]")
-                    continue
-                
-                selected_item_name = None
-                if section_name == "Characters": selected_item_name = questionary.select("Select character to edit:", choices=[item.get("name", f"Character {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Plot": selected_item_name = questionary.select("Select plot point to edit:", choices=[item.get("name", f"Plot Point {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Worldbuilding": selected_item_name = questionary.select("Select worldbuilding element to edit:", choices=[item.get("name", f"Worldbuilding Element {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Themes": selected_item_name = questionary.select("Select theme to edit:", choices=[item.get("theme_name", f"Theme {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Notes/Ideas": selected_item_name = questionary.select("Select note/idea to edit:", choices=[item.get("title", f"Note/Idea {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "References": selected_item_name = questionary.select("Select reference to edit:", choices=[item.get("title", f"Reference {i}") for i, item in enumerate(data)]).ask()
-                elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
-                    selected_item_name = questionary.select("Select chapter to edit:", choices=[item.get("chapter_title", f"Chapter {i}") for i, item in enumerate(data)]).ask()
-                elif project_type in ["Scientific Article", "Scientific Book"] and section_name in ["Title", "Abstract", "Introduction", "Methods", "Results", "Discussion", "Conclusion"]:
-                    new_content = get_simple_text_input("Edit content:", default_value=data[0] if data else "")
-                    if new_content:
-                        data = [new_content]
-                        self.project_repository.save_section_content(project_name, section_name, data)
-                        self.console.print("[green]Content updated.[/green]")
-                        continue
-                else:
-                    selected_item_name = questionary.select("Select item to edit:", choices=[f"{i}: {json.dumps(item)}" for i, item in enumerate(data)]).ask()
-
-                if selected_item_name:
-                    index = -1
-                    if section_name == "Characters": index = next((i for i, item in enumerate(data) if item.get("name") == selected_item_name), None)
-                    elif section_name == "Plot": index = next((i for i, item in enumerate(data) if item.get("name") == selected_item_name), None)
-                    elif section_name == "Worldbuilding": index = next((i for i, item in enumerate(data) if item.get("name") == selected_item_name), None)
-                    elif section_name == "Themes": index = next((i for i, item in enumerate(data) if item.get("theme_name") == selected_item_name), None)
-                    elif section_name == "Notes/Ideas": index = next((i for i, item in enumerate(data) if item.get("title") == selected_item_name), None)
-                    elif section_name == "References": index = next((i for i, item in enumerate(data) if item.get("title") == selected_item_name), None)
-                    elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
-                        index = next((i for i, item in enumerate(data) if item.get("chapter_title") == selected_item_name), None)
-                    else: index = int(selected_item_name.split(':')[0])
-
-                    if index is not None and index != -1:
-                        updated_item_data = {}
-                        if section_name == "Characters": updated_item_data = get_character_input(data[index])
-                        elif section_name == "Plot": updated_item_data = get_plot_point_input(data[index])
-                        elif section_name == "Worldbuilding": updated_item_data = get_worldbuilding_element_input(data[index])
-                        elif section_name == "Themes": updated_item_data = get_theme_input(data[index])
-                        elif section_name == "Notes/Ideas": updated_item_data = get_note_idea_input(data[index])
-                        elif section_name == "References": updated_item_data = get_reference_input(data[index])
-                        elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
-                            updated_item_data = get_chapter_input(data[index])
-                        else: 
-                            new_value = questionary.text("Enter new value:", default=json.dumps(data[index])).ask()
-                            try: updated_item_data = json.loads(new_value)
-                            except json.JSONDecodeError: updated_item_data = new_value
-                        
-                        if updated_item_data:
-                            data[index] = updated_item_data
-                            self.project_repository.save_section_content(project_name, section_name, data)
-                            self.console.print(f"[green]{edit_action.replace('Edit ', '')} updated.[/green]")
-
-            elif action == delete_action:
-                if not data:
-                    self.console.print("[yellow]No items to delete.[/yellow]")
-                    continue
-
-                selected_item_name = None
-                if section_name == "Characters": selected_item_name = questionary.select("Select character to delete:", choices=[item.get("name", f"Character {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Plot": selected_item_name = questionary.select("Select plot point to delete:", choices=[item.get("name", f"Plot Point {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Worldbuilding": selected_item_name = questionary.select("Select worldbuilding element to delete:", choices=[item.get("name", f"Worldbuilding Element {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Themes": selected_item_name = questionary.select("Select theme to delete:", choices=[item.get("theme_name", f"Theme {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "Notes/Ideas": selected_item_name = questionary.select("Select note/idea to delete:", choices=[item.get("title", f"Note/Idea {i}") for i, item in enumerate(data)]).ask()
-                elif section_name == "References": selected_item_name = questionary.select("Select reference to delete:", choices=[item.get("title", f"Reference {i}") for i, item in enumerate(data)]).ask()
-                elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
-                    selected_item_name = questionary.select("Select chapter to delete:", choices=[item.get("chapter_title", f"Chapter {i}") for i, item in enumerate(data)]).ask()
-                elif project_type in ["Scientific Article", "Scientific Book"] and section_name in ["Title", "Abstract", "Introduction", "Methods", "Results", "Discussion", "Conclusion"]:
-                    if questionary.confirm("Are you sure you want to delete the content?").ask():
-                        data = []
-                        self.project_repository.save_section_content(project_name, section_name, data)
-                        self.console.print("[green]Content deleted.[/green]")
-                        continue
-                else:
-                    selected_item_name = questionary.select("Select item to delete:", choices=[f"{i}: {json.dumps(item)}" for i, item in enumerate(data)]).ask()
-
-                if selected_item_name:
-                    index = -1
-                    if section_name == "Characters": index = next((i for i, item in enumerate(data) if item.get("name") == selected_item_name), None)
-                    elif section_name == "Plot": index = next((i for i, item in enumerate(data) if item.get("name") == selected_item_name), None)
-                    elif section_name == "Worldbuilding": index = next((i for i, item in enumerate(data) if item.get("name") == selected_item_name), None)
-                    elif section_name == "Themes": index = next((i for i, item in enumerate(data) if item.get("theme_name") == selected_item_name), None)
-                    elif section_name == "Notes/Ideas": index = next((i for i, item in enumerate(data) if item.get("title") == selected_item_name), None)
-                    elif section_name == "References": index = next((i for i, item in enumerate(data) if item.get("title") == selected_item_name), None)
-                    elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
-                        index = next((i for i, item in enumerate(data) if item.get("chapter_title") == selected_item_name), None)
-                    else: index = int(selected_item_name.split(':')[0])
-
-                    if index is not None and index != -1:
-                        del data[index]
-                        self.project_repository.save_section_content(project_name, section_name, data)
-                        self.console.print(f"[green]{delete_action.replace('Delete ', '')} deleted.[/green]")
-            
-            elif action == view_details_action:
-                if section_name == "Characters": view_details(data, "Name")
-                elif section_name == "Plot": view_details(data, "name")
-                elif section_name == "Worldbuilding": view_details(data, "name")
-                elif section_name == "Themes": view_details(data, "theme_name")
-                elif section_name == "Notes/Ideas": view_details(data, "title")
-                elif section_name == "References": view_details(data, "title")
-                elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
-                    view_details(data, "chapter_title")
-            elif action == "Export References":
-                self.export_references_menu(project_name)
-
-    def export_references_menu(self, project_name):
-        export_format = questionary.select(
-            "Select reference export format:",
-            choices=["BibTeX", "RIS", "Zotero RDF"]
-        ).ask()
-
-        if export_format:
-            message = self.project_repository.export_project(project_name, export_format)
-            self.console.print(f"[bold green]{message}[/bold green]")
+            handler.handle_section_action(project_name, section_name, action, data)
