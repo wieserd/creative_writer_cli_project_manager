@@ -91,7 +91,7 @@ If you want to run the application directly from the cloned repository, you can 
 
 ```bash
 # Clone the repository (if you haven't already)
-git clone https://github.com/YOUR_GITHUB_USERNAME/creative_writer_cli_project_manager.git # Replace with your actual repo URL
+git clone https://github.com/wieserd/creative_writer_cli_project_manager.git
 cd creative_writer_cli_project_manager
 
 # Run the setup script
@@ -109,7 +109,7 @@ python3 -m venv my_writer_env
 source my_writer_env/bin/activate
 
 # Install directly from GitHub
-pip install git+https://github.com/YOUR_GITHUB_USERNAME/creative_writer_cli_project_manager.git # Replace with your actual repo URL
+pip install git+https://github.com/wieserd/creative_writer_cli_project_manager.git
 
 # Run the CLI tool
 creative-writer
@@ -156,7 +156,7 @@ If you want to run the application directly from the cloned repository, you can 
 
 ```bash
 # Clone the repository (if you haven't already)
-git clone https://github.com/YOUR_GITHUB_USERNAME/creative_writer_cli_project_manager.git # Replace with your actual repo URL
+git clone https://github.com/wieserd/creative_writer_cli_project_manager.git
 cd creative_writer_cli_project_manager
 
 # Run the setup script
@@ -174,7 +174,7 @@ python3 -m venv my_writer_env
 source my_writer_env/bin/activate
 
 # Install directly from GitHub
-pip install git+https://github.com/YOUR_GITHUB_USERNAME/creative_writer_cli_project_manager.git # Replace with your actual repo URL
+pip install git+https://github.com/wieserd/creative_writer_cli_project_manager.git
 
 # Run the CLI tool
 creative-writer
