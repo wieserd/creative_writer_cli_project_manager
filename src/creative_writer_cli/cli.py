@@ -2,13 +2,28 @@ import os
 from creative_writer_cli.data.repositories.project_repository import ProjectRepository
 from creative_writer_cli.ui.cli_app import CLIApp
 
+def _get_project_base_dir():
+    # Check for environment variable
+    projects_dir = os.environ.get('CREATIVE_WRITER_PROJECTS_DIR')
+
+    if projects_dir:
+        # Use the path from the environment variable
+        projects_dir = os.path.expanduser(projects_dir)
+    else:
+        # Default to ~/.creative_writer_cli/projects
+        home_dir = os.path.expanduser("~")
+        projects_dir = os.path.join(home_dir, ".creative_writer_cli", "projects")
+
+    # Ensure the directory exists
+    os.makedirs(projects_dir, exist_ok=True)
+    return projects_dir
+
 def main():
-    # Determine the absolute path to the project root directory
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root_dir = os.path.dirname(script_dir) # Go up one level from src
+    # Get the base directory for projects
+    project_base_dir = _get_project_base_dir()
     
-    # Pass the project root directory to the ProjectRepository
-    project_repository = ProjectRepository(base_dir=os.path.join(project_root_dir, "projects"))
+    # Pass the determined base directory to the ProjectRepository
+    project_repository = ProjectRepository(base_dir=project_base_dir)
     
     app = CLIApp(project_repository)
     app.main_menu()
