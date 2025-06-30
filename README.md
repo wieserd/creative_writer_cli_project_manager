@@ -78,26 +78,41 @@ Follow the prompts to create a new project, select its type, and start organizin
 
 ```
 creative_writer_cli_project_manager/
-├── src/
-│   ├── creative_writer_cli/
-│   │   ├── data/
-│   │   │   ├── repositories/
+├── .git/                               # Git version control directory
+├── src/                                # Source code directory
+│   ├── creative_writer_cli/            # Core application logic
+│   │   ├── core/                       # Core logic/models
+│   │   ├── data/                       # Data handling modules
+│   │   │   ├── repositories/           # Data repositories
 │   │   │   │   ├── __init__.py
-│   │   │   │   ├── json_store.py             # Handles low-level JSON file operations
-│   │   │   │   └── project_repository.py     # Manages project data (create, read, update, delete)
-│   │   │   └── __init__.py
-│   │   ├── ui/
-│   │   │   ├── cli_app.py                    # Main CLI application logic and menus
-│   │   │   ├── display/                      # Modules for displaying data (tables, views)
-│   │   │   └── wizards/                      # Modules for interactive user input (wizards)
-│   │   └── utils/
-│   │       ├── path_helpers.py               # Utility for constructing file paths
-│   │       ├── word_counter.py               # Logic for calculating word counts
-│   │       └── ...                           # Other utility modules (e.g., export_formatter)
-│   │   └── __init__.py
-│   ├── main.py                               # Application entry point
-│   └── projects/                             # Directory for storing user projects
-├── requirements.txt                          # Python dependencies
-├── run.sh                                    # Script to set up environment and run the application
-└── README.md                                 # This file
+│   │   │   │   ├── json_store.py       # Handles low-level JSON file operations
+│   │   │   │   └── project_repository.py # Manages project data (CRUD)
+│   │   │   └── json_store.py           # (Duplicate entry, likely moved to repositories)
+│   │   │   └── project_repository.py   # (Duplicate entry, likely moved to repositories)
+│   │   ├── ui/                         # User Interface modules
+│   │   │   ├── cli_app.py              # Main CLI application logic and menus
+│   │   │   ├── display/                # Modules for displaying data (tables, views)
+│   │   │   │   ├── tables.py
+│   │   │   │   └── views.py
+│   │   │   ├── wizards/                # Modules for interactive user input (wizards)
+│   │   │   │   ├── generic_wizards.py
+│   │   │   │   ├── novel_wizards.py
+│   │   │   │   └── scientific_wizards.py
+│   │   │   ├── ascii_art.py
+│   │   │   ├── display.py
+│   │   │   └── wizards.py
+│   │   └── utils/                      # Utility modules
+│   │       ├── export_formatter.py
+│   │       ├── path_helpers.py         # Utility for constructing file paths
+│   │       ├── reference_export_formatter.py
+│   │       └── word_counter.py         # Logic for calculating word counts
+│   ├── main.py                         # Application entry point
+│   └── projects/                       # Directory for storing user projects (initially empty)
+├── .gitattributes                      # Git attributes configuration
+├── .gitignore                          # Specifies intentionally untracked files to ignore
+├── LICENSE                             # Project license file
+├── README.md                           # Project documentation
+├── requirements.txt                    # Python dependencies
+├── run.sh                              # Script to set up environment and run the application
+└── venv/                               # Python virtual environment (created by run.sh)
 ```
