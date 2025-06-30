@@ -42,7 +42,7 @@ def get_plot_point_input(plot_point_data=None):
 def get_worldbuilding_element_input(element_data=None):
     fields = [
         ("name", "text"), 
-        ("type", "select", ["Location", "Culture", "Technology", "Magic System", "Notes"])),,
+        ("type", "select", ["Location", "Culture", "Technology", "Magic System", "Notes"]),
         ("description", "text"), ("history_lore", "text"), ("connections", "text")
     ]
 
