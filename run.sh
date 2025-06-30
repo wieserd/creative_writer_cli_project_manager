@@ -1,21 +1,21 @@
 #!/bin/bash
 
-# Determine the directory where the script is located
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+# Determine the directory where the script is located (which is the project root)
+PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+# Navigate to the project root
+cd "$PROJECT_ROOT" || exit
 
 # Create a virtual environment if it doesn't exist
-if [ ! -d "$PROJECT_ROOT/venv" ]; then
+if [ ! -d "venv" ]; then
     echo "Creating virtual environment..."
-    python3 -m venv "$PROJECT_ROOT/venv"
+    python3 -m venv venv
 fi
 
 # Activate the virtual environment
-source "$PROJECT_ROOT/venv/bin/activate"
+source venv/bin/activate
 
-# Navigate to the project root and install the package in editable mode
-cd "$PROJECT_ROOT" || exit
-
+# Install the package in editable mode
 echo "Installing/Updating package dependencies..."
 pip install -e .
 
