@@ -53,6 +53,12 @@ class CLIApp:
         else:
             self.console.print("[yellow]Project directory remains unchanged.[/yellow]")
 
+    def _validate_project_directory(self):
+        if not os.path.exists(self.project_repository.base_dir) or not os.path.isdir(self.project_repository.base_dir):
+            self.console.print("[bold red]Error: Could not open specified project folder. Please configure project directory.[/bold red]")
+            return False
+        return True
+
     def create_project():
         project_type = questionary.select(
             "What type of writing?",
