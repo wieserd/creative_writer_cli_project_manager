@@ -1,6 +1,6 @@
 [project]
 name = "creative-writer-cli"
-version = "0.1.1"
+version = "0.1.2"
 description = "A minimalistic CLI tool for creative writing project management."
 readme = "README.md"
 requires-python = ">=3.8"
