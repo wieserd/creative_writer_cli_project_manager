@@ -1,35 +1,39 @@
-**Revised Development Plan: Code Refactoring for Robustness and Modularity**
+**Revised Development Plan: Code Refactoring for Robustness and Modularity (Focused on `edit_section`)**
 
-**Goal:** Improve the project's code structure, readability, and maintainability by refactoring large files and logically grouping functionalities into more focused modules.
+**Goal:** Break down the monolithic `edit_section` method into smaller, more manageable, and single-responsibility units.
 
-**Phase 1: Refactor `CLIApp` and UI Logic**
+**Phase 1: Extract Section-Specific Logic from `edit_section`**
 
-*   **1.1 Create `src/creative_writer_cli/ui/services/` directory:** This directory will house new service classes that encapsulate complex UI interaction logic, reducing the burden on `CLIApp`. SUCCESS
-*   **1.2 Create `src/creative_writer_cli/ui/services/project_interaction_service.py`:**
-    *   Move the `project_menu`, `rename_project`, `view_edit_sections`, `export_project_menu`, `edit_section`, and `export_references_menu` methods from `CLIApp` into a new `ProjectInteractionService` class.
-    *   This service will take `project_repository` and `console` as dependencies.
-    *   `CLIApp` will then instantiate and delegate to this service. SUCCESS
-*   **1.3 Update `src/creative_writer_cli/ui/cli_app.py`:**
-    *   Import the new `ProjectInteractionService`.
-    *   Modify `CLIApp` to instantiate `ProjectInteractionService` and call its methods.
-    *   Keep `main_menu`, `create_project`, `view_projects`, `delete_project`, and `_configure_project_directory` in `CLIApp` as they represent the top-level application flow. SUCCESS
-*   **1.4 Refactor `edit_section` logic (within `ProjectInteractionService`):**
-    *   The `edit_section` method is still quite large due to the many `if/elif` blocks for different section types. Consider creating a `SectionEditor` class or a dictionary of handlers for each section type to further modularize this. (This might be a follow-up refactoring if the initial move is too large).
+*   **1.1 Create `src/creative_writer_cli/ui/section_handlers/` directory:** This directory will contain modules for handling the specific logic of each section type. SUCCESS
+*   **1.2 Create `src/creative_writer_cli/ui/section_handlers/base_section_handler.py`:** Define an abstract base class or interface for section handlers, outlining common methods like `display_table`, `get_add_input`, `get_edit_input`, `get_delete_input`, `view_details`. SUCCESS
+*   **1.3 Create `src/creative_writer_cli/ui/section_handlers/character_handler.py`:**
+    *   Move all character-specific logic (displaying table, getting input for add/edit, handling delete, viewing details) from `edit_section` into this new handler.
+    *   This handler will depend on `display_character_table`, `get_character_input`, etc. SUCCESS
+*   **1.4 Create `src/creative_writer_cli/ui/section_handlers/plot_handler.py`:** (Similar to character handler, for plot logic). SUCCESS
+*   **1.5 Create `src/creative_writer_cli/ui/section_handlers/worldbuilding_handler.py`:** (Similar for worldbuilding). SUCCESS
+*   **1.6 Create `src/creative_writer_cli/ui/section_handlers/theme_handler.py`:** (Similar for themes). SUCCESS
+*   **1.7 Create `src/creative_writer_cli/ui/section_handlers/notes_handler.py`:** (Similar for notes/ideas). SUCCESS
+*   **1.8 Create `src/creative_writer_cli/ui/section_handlers/reference_handler.py`:** (Similar for references, including export). SUCCESS
+*   **1.9 Create `src/creative_writer_cli/ui/section_handlers/scientific_text_handler.py`:** (For Title, Abstract, Introduction, etc.). SUCCESS
+*   **1.10 Create `src/creative_writer_cli/ui/section_handlers/chapter_handler.py`:** (For Scientific Book chapters). SUCCESS
+*   **1.11 Create `src/creative_writer_cli/ui/section_handlers/generic_handler.py`:** For the fallback `else` case in `edit_section`. SUCCESS
 
-**Phase 2: Review and Refactor Other Modules (if necessary)**
+**Phase 2: Integrate Handlers into `ProjectInteractionService`**
 
-*   **2.1 Review `src/creative_writer_cli/data/repositories/`:** Ensure `json_store.py` and `project_repository.py` are focused on their single responsibilities. (Already done in previous steps).
-*   **2.2 Review `src/creative_writer_cli/ui/display/`:** Ensure display functions are purely for rendering and don't contain interaction logic.
-*   **2.3 Review `src/creative_writer_cli/ui/wizards/`:** Ensure wizard functions are purely for input gathering and validation.
-*   **2.4 Review `src/creative_writer_cli/utils/`:** Ensure utility functions are generic and reusable.
+*   **2.1 Modify `src/creative_writer_cli/ui/services/project_interaction_service.py`:**
+    *   The `edit_section` method will be drastically simplified. It will:
+        *   Determine the appropriate handler based on `section_name` and `project_type`.
+        *   Instantiate the handler.
+        *   Delegate the add, edit, delete, and view details actions to the handler.
+    *   This will likely involve a dictionary mapping section names/types to handler classes.
 
 **Phase 3: Update Imports and Test**
 
-*   **3.1 Update all necessary import statements** in affected files.
+*   **3.1 Update all necessary import statements** in affected files (especially `project_interaction_service.py` and the new handlers).
 *   **3.2 Run existing unit tests** to ensure no regressions.
 *   **3.3 Manually test the application** to verify all functionalities.
 
 **Phase 4: Update Documentation**
 
-*   **4.1 Update `README.md`:** Reflect the new project structure.
+*   **4.1 Update `README.md`:** Reflect the new project structure and modularity.
 *   **4.2 Update `development_plan.md`:** Mark steps as SUCCESS.
