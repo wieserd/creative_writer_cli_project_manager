@@ -233,6 +233,22 @@ creative_writer_cli_project_manager/
 │   │   │   ├── display/                # Modules for displaying data (tables, views)
 │   │   │   │   ├── tables.py
 │   │   │   │   └── views.py
+│   │   │   ├── services/               # Service classes for UI logic
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── project_interaction_service.py
+│   │   │   │   └── section_editor.py   # Placeholder for future refactoring
+│   │   │   ├── section_handlers/       # Handlers for specific section types
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── base_section_handler.py
+│   │   │   │   ├── character_handler.py
+│   │   │   │   ├── plot_handler.py
+│   │   │   │   ├── worldbuilding_handler.py
+│   │   │   │   ├── theme_handler.py
+│   │   │   │   ├── notes_handler.py
+│   │   │   │   ├── reference_handler.py
+│   │   │   │   ├── scientific_text_handler.py
+│   │   │   │   ├── chapter_handler.py
+│   │   │   │   └── generic_handler.py
 │   │   │   ├── wizards/                # Modules for interactive user input (wizards)
 │   │   │   │   ├── generic_wizards.py
 │   │   │   │   ├── novel_wizards.py
@@ -245,7 +261,7 @@ creative_writer_cli_project_manager/
 │   │       ├── path_helpers.py         # Utility for constructing file paths
 │   │       ├── reference_export_formatter.py
 │   │       └── word_counter.py         # Logic for calculating word counts
-│   ├── main.py                         # Application entry point
+│   ├── cli.py                                # Application entry point
 │   └── projects/                       # Directory for storing user projects (initially empty)
 ├── .gitattributes                      # Git attributes configuration
 ├── .gitignore                          # Specifies intentionally untracked files to ignore

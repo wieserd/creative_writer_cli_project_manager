@@ -41,13 +41,17 @@ class CLIApp:
 
     def _configure_project_directory(self):
         self.console.print("\n[bold]Configure Project Directory[/bold]")
-        new_path = prompt_for_project_directory()
-        if new_path:
+        new_path = prompt_for_project_directory(self.project_repository.base_dir)
+        if new_path is None: # User cancelled (Ctrl+C)
+            self.console.print("[yellow]Project directory configuration cancelled.[/yellow]")
+            return
+        
+        if new_path != self.project_repository.base_dir: # Only update if path actually changed
             config_manager.set_project_directory_in_config(new_path)
             self.project_repository.base_dir = new_path # Update the repository's base_dir immediately
             self.console.print(f"[green]Project directory set to: {new_path}[/green]")
         else:
-            self.console.print("[yellow]Project directory configuration cancelled.[/yellow]")
+            self.console.print("[yellow]Project directory remains unchanged.[/yellow]")
 
     def create_project():
         project_type = questionary.select(

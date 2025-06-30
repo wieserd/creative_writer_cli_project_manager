@@ -4,15 +4,19 @@ import os
 def get_simple_text_input(prompt, default_value=""):
     return questionary.text(prompt, default=default_value, multiline=True).ask()
 
-def prompt_for_project_directory():
+def prompt_for_project_directory(current_path: str):
     while True:
         path = questionary.text(
-            "Enter the path where you want to store your projects (e.g., ~/Documents/MyWriterProjects):",
-            validate=lambda text: "Path cannot be empty." if not text else True
+            f"Enter the path where you want to store your projects (current: {current_path})\n(Press Enter to keep current path, or Ctrl+C to cancel):",
+            default=current_path,
+            validate=lambda text: True if text or current_path else "Path cannot be empty."
         ).ask()
 
-        if not path:
-            return None # User cancelled
+        if path is None: # User pressed Ctrl+C
+            return None
+
+        if not path: # User pressed Enter to keep current path
+            return current_path
 
         expanded_path = os.path.expanduser(path)
 
