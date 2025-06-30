@@ -48,44 +48,87 @@ class CLIApp:
 
         import_choice = questionary.select(
             "Do you want to import a single note or multiple notes?",
-            choices=["Import Single Note", "Import Multiple Notes (Coming Soon)"]
+            choices=["Import Single Note", "Import Multiple Notes"]
         ).ask()
 
         if import_choice == "Import Single Note":
-            file_path = questionary.text("Enter the absolute path to the .txt file:").ask()
-            if not file_path:
-                self.console.print("[bold red]File path cannot be empty.[/bold red]")
-                return
-            
-            if not os.path.exists(file_path):
-                self.console.print(f"[bold red]Error: File not found at {file_path}[/bold red]")
-                return
-            
-            if not file_path.lower().endswith(".txt"):
-                self.console.print("[bold red]Error: Only .txt files are supported for import.[/bold red]")
-                return
+            self._import_single_note()
+        elif import_choice == "Import Multiple Notes":
+            self._import_multiple_notes()
 
-            try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-            except Exception as e:
-                self.console.print(f"[bold red]Error reading file: {e}[/bold red]")
-                return
-
-            project_name = os.path.splitext(os.path.basename(file_path))[0]
-            project_type = "General Notes"
-
-            success, message = self.project_repository.create_project(project_name, project_type)
-            if success:
-                self.console.print(f"[bold green]{message}[/bold green]")
-                # Add content to the 'Notes' section of the new project
-                self.project_repository.save_section_content(project_name, "Notes", content)
-                self.console.print(f"[bold green]Content from {os.path.basename(file_path)} imported into '{project_name}' project.[/bold green]")
-            else:
-                self.console.print(f"[bold red]{message}[/bold red]")
-        elif import_choice == "Import Multiple Notes (Coming Soon)":
-            self.console.print("[bold yellow]Importing multiple notes is not yet implemented. Please select 'Import Single Note'.[/bold yellow]")
+    def _import_single_note(self):
+        file_path = questionary.text("Enter the absolute path to the .txt file:").ask()
+        if not file_path:
+            self.console.print("[bold red]File path cannot be empty.[/bold red]")
             return
+        
+        if not os.path.exists(file_path):
+            self.console.print(f"[bold red]Error: File not found at {file_path}[/bold red]")
+            return
+        
+        if not file_path.lower().endswith(".txt"):
+            self.console.print("[bold red]Error: Only .txt files are supported for import.[/bold red]")
+            return
+
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+        except Exception as e:
+            self.console.print(f"[bold red]Error reading file: {e}[/bold red]")
+            return
+
+        project_name = os.path.splitext(os.path.basename(file_path))[0]
+        project_type = "General Notes"
+
+        success, message = self.project_repository.create_project(project_name, project_type)
+        if success:
+            self.console.print(f"[bold green]{message}[/bold green]")
+            self.project_repository.save_section_content(project_name, "Notes", content)
+            self.console.print(f"[bold green]Content from {os.path.basename(file_path)} imported into '{project_name}' project.[/bold green]")
+        else:
+            self.console.print(f"[bold red]{message}[/bold red]")
+
+    def _import_multiple_notes(self):
+        folder_path = questionary.text("Enter the absolute path to the folder containing .txt files:").ask()
+        if not folder_path:
+            self.console.print("[bold red]Folder path cannot be empty.[/bold red]")
+            return
+
+        if not os.path.isdir(folder_path):
+            self.console.print(f"[bold red]Error: Directory not found at {folder_path}[/bold red]")
+            return
+
+        imported_count = 0
+        skipped_count = 0
+        for filename in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, filename)
+            if os.path.isfile(file_path) and filename.lower().endswith(".txt"):
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    
+                    project_name = os.path.splitext(filename)[0]
+                    project_type = "General Notes"
+
+                    success, message = self.project_repository.create_project(project_name, project_type)
+                    if success:
+                        self.project_repository.save_section_content(project_name, "Notes", content)
+                        self.console.print(f"[green]Successfully imported '{filename}' as project '{project_name}'[/green]")
+                        imported_count += 1
+                    else:
+                        self.console.print(f"[bold red]Failed to create project for '{filename}': {message}[/bold red]")
+                        skipped_count += 1
+
+                except Exception as e:
+                    self.console.print(f"[bold red]Error reading file '{filename}': {e}[/bold red]")
+                    skipped_count += 1
+            elif os.path.isfile(file_path):
+                self.console.print(f"[yellow]Skipping non-txt file: {filename}[/yellow]")
+                skipped_count += 1
+        
+        self.console.print(f"\n[bold]Import complete.[/bold]")
+        self.console.print(f"- [green]Successfully imported files: {imported_count}[/green]")
+        self.console.print(f"- [yellow]Skipped files: {skipped_count}[/yellow]")
 
     def _configure_project_directory(self):
         self.console.print("\n[bold]Configure Project Directory[/bold]")
