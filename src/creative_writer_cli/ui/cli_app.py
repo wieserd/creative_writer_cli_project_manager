@@ -49,7 +49,7 @@ class CLIApp:
         else:
             self.console.print("[yellow]Project directory configuration cancelled.[/yellow]")
 
-    def create_project(self):
+    def create_project():
         project_type = questionary.select(
             "What type of writing?",
             choices=list(TEMPLATES.keys())
