@@ -9,6 +9,7 @@ from .wizards.generic_wizards import prompt_for_project_directory
 from ..utils import config_manager
 from .ascii_art import get_ascii_art
 from .services.project_interaction_service import ProjectInteractionService
+from .services.note_import_service import NoteImportService # Import the new service
 
 console = Console()
 
@@ -17,6 +18,7 @@ class CLIApp:
         self.project_repository = project_repository
         self.console = Console()
         self.project_interaction_service = ProjectInteractionService(project_repository, self.console)
+        self.note_import_service = NoteImportService(project_repository, self.console) # Instantiate the new service
 
     def main_menu(self):
         self.console.print(get_ascii_art())
@@ -33,7 +35,9 @@ class CLIApp:
             elif choice == "Delete Project":
                 self.delete_project()
             elif choice == "Import General Notes":
-                self.import_general_notes()
+                if not self._validate_project_directory():
+                    return
+                self.note_import_service.import_general_notes() # Delegate to the new service
             elif choice == "Add Note to Notebook":
                 self._add_note_to_notebook()
             elif choice == "Configure Project Directory":
@@ -44,95 +48,7 @@ class CLIApp:
                 else:
                     continue # If user says no, continue the loop and show main menu again
 
-    def import_general_notes(self):
-        if not self._validate_project_directory():
-            return
-
-        import_choice = questionary.select(
-            "Do you want to import a single note or multiple notes?",
-            choices=["Import Single Note", "Import Multiple Notes"]
-        ).ask()
-
-        if import_choice == "Import Single Note":
-            self._import_single_note()
-        elif import_choice == "Import Multiple Notes":
-            self._import_multiple_notes()
-
-    def _import_single_note(self):
-        file_path = questionary.text("Enter the absolute path to the .txt file:").ask()
-        if not file_path:
-            self.console.print("[bold red]File path cannot be empty.[/bold red]")
-            return
-        
-        if not os.path.exists(file_path):
-            self.console.print(f"[bold red]Error: File not found at {file_path}[/bold red]")
-            return
-        
-        if not file_path.lower().endswith(".txt"):
-            self.console.print("[bold red]Error: Only .txt files are supported for import.[/bold red]")
-            return
-
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-        except Exception as e:
-            self.console.print(f"[bold red]Error reading file: {e}[/bold red]")
-            return
-
-        project_name = os.path.splitext(os.path.basename(file_path))[0]
-        project_type = "General Notes"
-
-        success, message = self.project_repository.create_project(project_name, project_type)
-        if success:
-            self.console.print(f"[bold green]{message}[/bold green]")
-            self.project_repository.save_section_content(project_name, "Notes", content)
-            self.console.print(f"[bold green]Content from {os.path.basename(file_path)} imported into '{project_name}' project.[/bold green]")
-        else:
-            self.console.print(f"[bold red]{message}[/bold red]")
-
-    def _import_multiple_notes(self):
-        folder_path = questionary.text("Enter the absolute path to the folder containing .txt files:").ask()
-        if not folder_path:
-            self.console.print("[bold red]Folder path cannot be empty.[/bold red]")
-            return
-
-        if not os.path.isdir(folder_path):
-            self.console.print(f"[bold red]Error: Directory not found at {folder_path}[/bold red]")
-            return
-
-        imported_count = 0
-        skipped_count = 0
-        for filename in os.listdir(folder_path):
-            file_path = os.path.join(folder_path, filename)
-            if os.path.isfile(file_path) and filename.lower().endswith(".txt"):
-                try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                    
-                    project_name = os.path.splitext(filename)[0]
-                    project_type = "General Notes"
-
-                    success, message = self.project_repository.create_project(project_name, project_type)
-                    if success:
-                        self.project_repository.save_section_content(project_name, "Notes", content)
-                        self.console.print(f"[green]Successfully imported '{filename}' as project '{project_name}'[/green]")
-                        imported_count += 1
-                    else:
-                        self.console.print(f"[bold red]Failed to create project for '{filename}': {message}[/bold red]")
-                        skipped_count += 1
-
-                except Exception as e:
-                    self.console.print(f"[bold red]Error reading file '{filename}': {e}[/bold red]")
-                    skipped_count += 1
-            elif os.path.isfile(file_path):
-                self.console.print(f"[yellow]Skipping non-txt file: {filename}[/yellow]")
-                skipped_count += 1
-        
-        self.console.print(f"\n[bold]Import complete.[/bold]")
-        self.console.print(f"- [green]Successfully imported files: {imported_count}[/green]")
-        self.console.print(f"- [yellow]Skipped files: {skipped_count}[/yellow]")
-
-    def _add_note_to_notebook(self):
+    def _add_note_to_notebook():
         if not self._validate_project_directory():
             return
 
@@ -198,7 +114,7 @@ class CLIApp:
         
         if new_path != self.project_repository.base_dir: # Only update if path actually changed
             config_manager.set_project_directory_in_config(new_path)
-            self.project_repository.base_dir = new_path # Update the repository's base_dir immediately
+            self.project_repository.base_dir = new_path # This will now use the setter to re-initialize json_store
             self.console.print(f"[green]Project directory set to: {new_path}[/green]")
         else:
             self.console.print("[yellow]Project directory remains unchanged.[/yellow]")
@@ -265,7 +181,7 @@ class CLIApp:
 
         if project_to_view_display:
             # Extract the actual project name from the display string
-            project_to_view = project_to_view_display.split(' (')[0]
+            project_to_view = project_to_view_display.split(' (')[-2]
 
         if project_to_view:
             self.project_interaction_service.project_menu(project_to_view)
