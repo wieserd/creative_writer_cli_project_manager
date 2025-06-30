@@ -6,17 +6,33 @@ from datetime import datetime
 from ...core.models import Character, PlotPoint, WorldbuildingElement, Theme, NoteIdea, Reference, Chapter, Project
 from ...core.templates import TEMPLATES
 from .json_store import JsonStore
-from ...utils import export_formatter, reference_export_formatter
+from ...utils.exporters import markdown_exporter, json_exporter, txt_exporter
+from ...utils.exporters import bibtex_formatter, ris_formatter, zotero_rdf_formatter
 from ...utils.word_counter import calculate_word_count
 
 from ...utils.path_helpers import get_section_filepath
 
 class ProjectRepository:
     def __init__(self, base_dir="projects"):
-        self.base_dir = base_dir
-        self.json_store = JsonStore(base_dir)
-        if not os.path.exists(self.base_dir):
-            os.makedirs(self.base_dir)
+        self._base_dir = base_dir
+        self._json_store = JsonStore(base_dir)
+        if not os.path.exists(self._base_dir):
+            os.makedirs(self._base_dir)
+
+    @property
+    def base_dir(self):
+        return self._base_dir
+
+    @base_dir.setter
+    def base_dir(self, new_base_dir):
+        self._base_dir = new_base_dir
+        self._json_store = JsonStore(new_base_dir)
+        if not os.path.exists(self._base_dir):
+            os.makedirs(self._base_dir)
+
+    @property
+    def json_store(self):
+        return self._json_store
 
     def create_project(self, project_name: str, project_type: str) -> tuple[bool, str]:
         project_path = os.path.join(self.base_dir, project_name)
@@ -107,61 +123,15 @@ class ProjectRepository:
     def export_project(self, project_name: str, export_format: str) -> str:
         project_abs_path = os.path.join(self.base_dir, project_name)
         output_content = ""
+        project_meta = self.get_project_meta(project_name)
+        sections = self.get_project_sections(project_name)
 
-        if export_format == "Markdown" or export_format == "TXT":
-            output_content += f"# {project_name}\n\n"
-            project_meta = self.get_project_meta(project_name)
-            project_type = project_meta.get('type')
-            sections = self.get_project_sections(project_name)
-
-            for section_name in sections:
-                content = self.get_section_content(project_name, section_name)
-                
-                if section_name == "Characters":
-                    output_content += export_formatter.format_characters_to_markdown(content)
-                elif section_name == "Plot":
-                    output_content += export_formatter.format_plot_points_to_markdown(content)
-                elif section_name == "Worldbuilding":
-                    output_content += export_formatter.format_worldbuilding_to_markdown(content)
-                elif section_name == "Themes":
-                    output_content += export_formatter.format_themes_to_markdown(content)
-                elif section_name == "Notes/Ideas":
-                    # For General Notes, content is a string, not a list
-                    if project_type == "General Notes" and section_name == "Notes":
-                        output_content += f"## {section_name}\n\n{content}\n\n"
-                    else:
-                        output_content += export_formatter.format_notes_to_markdown(content)
-                elif section_name == "References":
-                    output_content += export_formatter.format_references_to_markdown(content)
-                elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
-                    output_content += export_formatter.format_chapters_to_markdown(content)
-                elif project_type in ["Scientific Article", "Scientific Book"] and section_name in ["Title", "Abstract", "Introduction", "Methods", "Results", "Discussion"]:
-                    output_content += export_formatter.format_generic_text_section_to_markdown(content, section_name)
-                else:
-                    # Fallback for any other sections not explicitly handled, or generic sections
-                    if content:
-                        output_content += f"## {section_name}\n\n"
-                        if isinstance(content, list) and len(content) == 1 and isinstance(content[0], str):
-                            output_content += f"{content[0]}\n\n"
-                        else:
-                            output_content += f"```json\n{json.dumps(content, indent=2)}\n```\n\n"
-                    else:
-                        output_content += f"## {section_name}\n\nNo content found.\n\n"
-
-            if export_format == "TXT":
-                # Convert Markdown to plain text for TXT export
-                # This is a very basic conversion, a proper Markdown parser would be better
-                output_content = output_content.replace("## ", "").replace("# ", "").replace("**", "").replace("```json", "").replace("```", "").replace("\n", "\n").replace("- ", "")
-
+        if export_format == "Markdown":
+            output_content = markdown_exporter.export_to_markdown(project_name, project_meta, sections, self.get_section_content)
+        elif export_format == "TXT":
+            output_content = txt_exporter.export_to_txt(project_name, project_meta, sections, self.get_section_content)
         elif export_format == "JSON":
-            all_data = {}
-            project_meta = self.get_project_meta(project_name)
-            all_data["meta"] = project_meta
-            sections = self.get_project_sections(project_name)
-            for section_name in sections:
-                content = self.get_section_content(project_name, section_name)
-                all_data[section_name.lower().replace(' ', '_')] = content
-            output_content = json.dumps(all_data, indent=4)
+            output_content = json_exporter.export_to_json(project_name, project_meta, sections, self.get_section_content)
         elif export_format in ["BibTeX", "RIS", "Zotero RDF"]:
             references_content = self.get_section_content(project_name, "References")
             if not references_content:
