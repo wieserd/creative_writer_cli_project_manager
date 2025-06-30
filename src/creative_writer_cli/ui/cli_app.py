@@ -23,7 +23,7 @@ class CLIApp:
         while True:
             choice = questionary.select(
                 "What do you want to do?",
-                choices=["Create New Project", "View Existing Projects", "Delete Project", "Import General Notes", "Configure Project Directory", "Exit"]
+                choices=["Create New Project", "View Existing Projects", "Delete Project", "Import General Notes", "Add Note to Notebook", "Configure Project Directory", "Exit"]
             ).ask()
 
             if choice == "Create New Project":
@@ -34,6 +34,8 @@ class CLIApp:
                 self.delete_project()
             elif choice == "Import General Notes":
                 self.import_general_notes()
+            elif choice == "Add Note to Notebook":
+                self._add_note_to_notebook()
             elif choice == "Configure Project Directory":
                 self._configure_project_directory()
             elif choice == "Exit" or choice is None:
@@ -129,6 +131,63 @@ class CLIApp:
         self.console.print(f"\n[bold]Import complete.[/bold]")
         self.console.print(f"- [green]Successfully imported files: {imported_count}[/green]")
         self.console.print(f"- [yellow]Skipped files: {skipped_count}[/yellow]")
+
+    def _add_note_to_notebook(self):
+        if not self._validate_project_directory():
+            return
+
+        all_projects = self.project_repository.get_projects()
+        general_notes_projects = []
+        notebook_projects = []
+
+        for project_name in all_projects:
+            meta = self.project_repository.get_project_meta(project_name)
+            if meta.get('type') == "General Notes":
+                general_notes_projects.append(project_name)
+            elif meta.get('type') == "Notebook":
+                notebook_projects.append(project_name)
+        
+        if not general_notes_projects:
+            self.console.print("[bold yellow]No 'General Notes' projects found to add.[/bold yellow]")
+            return
+
+        if not notebook_projects:
+            self.console.print("[bold yellow]No 'Notebook' projects found. Please create one first.[/bold yellow]")
+            return
+
+        note_to_add = questionary.select(
+            "Select a 'General Note' project to add to a Notebook:",
+            choices=general_notes_projects
+        ).ask()
+
+        if not note_to_add:
+            self.console.print("[yellow]Operation cancelled.[/yellow]")
+            return
+
+        target_notebook = questionary.select(
+            f"Select the 'Notebook' project to add '{note_to_add}' to:",
+            choices=notebook_projects
+        ).ask()
+
+        if not target_notebook:
+            self.console.print("[yellow]Operation cancelled.[/yellow]")
+            return
+
+        # Get the content of the General Note
+        note_content = self.project_repository.get_section_content(note_to_add, "Notes")
+
+        # Add the note as a new section in the target Notebook
+        success, message = self.project_repository.add_section_to_project(target_notebook, note_to_add, note_content)
+        if success:
+            self.console.print(f"[green]Successfully added '{note_to_add}' to '{target_notebook}' as a new section.[/green]")
+            # Delete the original General Note project
+            delete_success, delete_message = self.project_repository.delete_project(note_to_add)
+            if delete_success:
+                self.console.print(f"[green]Original 'General Note' project '{note_to_add}' deleted.[/green]")
+            else:
+                self.console.print(f"[bold red]Error deleting original 'General Note' project: {delete_message}[/bold red]")
+        else:
+            self.console.print(f"[bold red]Error adding note to notebook: {message}[/bold red]")
 
     def _configure_project_directory(self):
         self.console.print("\n[bold]Configure Project Directory[/bold]")
