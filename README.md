@@ -50,9 +50,8 @@ The `creative_writer_cli` can be installed and run in several ways:
 This method allows you to run the CLI directly from the GitHub repository without cloning it first. It will set up a temporary environment, run the application, and clean up afterward.
 
 ```bash
-bash <(curl -sL https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/creative_writer_cli_project_manager/main/run_from_github.sh)
+bash <(curl -sL https://raw.githubusercontent.com/wieserd/creative_writer_cli_project_manager/main/run_from_github.sh)
 ```
-**Important:** Replace `YOUR_GITHUB_USERNAME` with your actual GitHub username or organization name.
 
 ### 2. Using `pipx` (Recommended for CLI Applications)
 
