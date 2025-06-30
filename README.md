@@ -116,70 +116,25 @@ creative-writer
 ```
 
 
-The `creative_writer_cli` can be installed and run in several ways:
+## Project Data Storage
 
-### 1. Using `pipx` (Recommended for CLI Applications)
+The `creative_writer_cli` stores your project data in JSON files. The location of these project files is determined as follows:
 
-`pipx` installs Python applications into isolated environments to prevent dependency conflicts, making it ideal for CLI tools.
+1.  **Custom Location (Environment Variable):**
+    If you set the `CREATIVE_WRITER_PROJECTS_DIR` environment variable, the application will use that path to store your projects. This is useful if you want to keep your projects in a specific directory (e.g., a cloud-synced folder like Dropbox or Google Drive).
 
-```bash
-# First, install pipx if you don't have it
-pip install pipx
-pipx ensurepath # Ensures pipx-installed apps are on your PATH
+    Example (for Bash/Zsh):
+    ```bash
+    export CREATIVE_WRITER_PROJECTS_DIR="/path/to/your/custom/projects"
+    creative-writer
+    ```
 
-# Install the creative-writer-cli
-pipx install creative-writer-cli
-
-# Run the application
-creative-writer
-```
-
-### 2. Using `pip` (Standard Python Package Installation)
-
-You can install the package directly using `pip` within a virtual environment.
-
-```bash
-# Create and activate a virtual environment
-python3 -m venv my_writer_env
-source my_writer_env/bin/activate
-
-# Install the package
-pip install creative-writer-cli
-
-# Run the application
-creative-writer
-```
-
-### 3. Running from Source (for Development or Quick Start)
-
-If you want to run the application directly from the cloned repository, you can use the provided `run.sh` script. This script will set up a virtual environment, install dependencies, and start the CLI.
-
-```bash
-# Clone the repository (if you haven't already)
-git clone https://github.com/wieserd/creative_writer_cli_project_manager.git
-cd creative_writer_cli_project_manager
-
-# Run the setup script
-./run.sh
-```
-*(If `./run.sh` does not work, you might need to give it execute permissions first: `chmod +x ./run.sh`)*
-
-### 4. Installing from Git Repository (for specific branches or pre-release versions)
-
-You can also install directly from the GitHub repository using `pip`.
-
-```bash
-# Create and activate a virtual environment
-python3 -m venv my_writer_env
-source my_writer_env/bin/activate
-
-# Install directly from GitHub
-pip install git+https://github.com/wieserd/creative_writer_cli_project_manager.git
-
-# Run the CLI tool
-creative-writer
-```
-
+2.  **Default Location:**
+    If the `CREATIVE_WRITER_PROJECTS_DIR` environment variable is not set, the application will default to storing projects in a hidden directory within your user's home folder:
+    ```
+    ~/.creative_writer_cli/projects/
+    ```
+    This directory will be automatically created if it doesn't exist.
 
 ## Portability
 
@@ -229,7 +184,84 @@ creative_writer_cli_project_manager/
 │   │       ├── path_helpers.py         # Utility for constructing file paths
 │   │       ├── reference_export_formatter.py
 │   │       └── word_counter.py         # Logic for calculating word counts
-│   ├── main.py                         # Application entry point
+│   ├── cli.py                                # Application entry point
+│   └── projects/                       # Directory for storing user projects (initially empty)
+├── .gitattributes                      # Git attributes configuration
+├── .gitignore                          # Specifies intentionally untracked files to ignore
+├── LICENSE                             # Project license file
+├── README.md                           # Project documentation
+
+├── run.sh                              # Script to set up environment and run the application
+└── venv/                               # Python virtual environment (created by run.sh)
+```
+
+
+
+## Portability
+
+This project is designed to be fully portable. The `run.sh` script dynamically determines the project's location, meaning you can place the `creative_writer_cli_project_manager` folder anywhere on your system, and the application will run correctly without needing to modify any internal paths.
+
+## Example Usage
+
+Once the application starts, you will be presented with a main menu:
+
+```
+What do you want to do? 
+❯ Create New Project
+  View Existing Projects
+  Delete Project
+  Exit
+```
+
+Follow the prompts to create a new project, select its type, and start organizing your writing. For 'Novel' projects, explore the structured sections for Characters, Plot, Worldbuilding, Themes, and Notes/Ideas. For 'Scientific Article' projects, you can begin adding content to its specific sections and manage references.
+
+## Project Structure
+
+```
+creative_writer_cli_project_manager/
+├── .git/                               # Git version control directory
+├── src/                                # Source code directory
+│   ├── creative_writer_cli/            # Core application logic
+│   │   ├── core/                       # Core logic/models
+│   │   ├── data/                       # Data handling modules
+│   │   │   └── repositories/           # Data repositories
+│   │   │       ├── __init__.py
+│   │   │       ├── json_store.py       # Handles low-level JSON file operations
+│   │   │       └── project_repository.py # Manages project data (CRUD)
+│   │   ├── ui/                         # User Interface modules
+│   │   │   ├── cli_app.py              # Main CLI application logic and menus
+│   │   │   ├── display/                # Modules for displaying data (tables, views)
+│   │   │   │   ├── tables.py
+│   │   │   │   └── views.py
+│   │   │   ├── services/               # Service classes for UI logic
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── project_interaction_service.py
+│   │   │   │   └── section_editor.py   # Placeholder for future refactoring
+│   │   │   ├── section_handlers/       # Handlers for specific section types
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── base_section_handler.py
+│   │   │   │   ├── character_handler.py
+│   │   │   │   ├── plot_handler.py
+│   │   │   │   ├── worldbuilding_handler.py
+│   │   │   │   ├── theme_handler.py
+│   │   │   │   ├── notes_handler.py
+│   │   │   │   ├── reference_handler.py
+│   │   │   │   ├── scientific_text_handler.py
+│   │   │   │   ├── chapter_handler.py
+│   │   │   │   └── generic_handler.py
+│   │   │   ├── wizards/                # Modules for interactive user input (wizards)
+│   │   │   │   ├── generic_wizards.py
+│   │   │   │   ├── novel_wizards.py
+│   │   │   │   └── scientific_wizards.py
+│   │   │   ├── ascii_art.py
+│   │   │   ├── display.py
+│   │   │   └── wizards.py
+│   │   └── utils/                      # Utility modules
+│   │       ├── export_formatter.py
+│   │       ├── path_helpers.py         # Utility for constructing file paths
+│   │       ├── reference_export_formatter.py
+│   │       └── word_counter.py         # Logic for calculating word counts
+│   ├── cli.py                                # Application entry point
 │   └── projects/                       # Directory for storing user projects (initially empty)
 ├── .gitattributes                      # Git attributes configuration
 ├── .gitignore                          # Specifies intentionally untracked files to ignore
