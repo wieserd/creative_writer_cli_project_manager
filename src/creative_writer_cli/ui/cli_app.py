@@ -79,7 +79,7 @@ class CLIApp:
             if success:
                 self.console.print(f"[bold green]{message}[/bold green]")
                 # Add content to the 'Notes' section of the new project
-                self.project_repository.update_section_content(project_name, "Notes", content)
+                self.project_repository.save_section_content(project_name, "Notes", content)
                 self.console.print(f"[bold green]Content from {os.path.basename(file_path)} imported into '{project_name}' project.[/bold green]")
             else:
                 self.console.print(f"[bold red]{message}[/bold red]")
