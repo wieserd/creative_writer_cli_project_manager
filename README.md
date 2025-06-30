@@ -83,12 +83,10 @@ creative_writer_cli_project_manager/
 │   ├── creative_writer_cli/            # Core application logic
 │   │   ├── core/                       # Core logic/models
 │   │   ├── data/                       # Data handling modules
-│   │   │   ├── repositories/           # Data repositories
-│   │   │   │   ├── __init__.py
-│   │   │   │   ├── json_store.py       # Handles low-level JSON file operations
-│   │   │   │   └── project_repository.py # Manages project data (CRUD)
-│   │   │   └── json_store.py           # (Duplicate entry, likely moved to repositories)
-│   │   │   └── project_repository.py   # (Duplicate entry, likely moved to repositories)
+│   │   │   └── repositories/           # Data repositories
+│   │   │       ├── __init__.py
+│   │   │       ├── json_store.py       # Handles low-level JSON file operations
+│   │   │       └── project_repository.py # Manages project data (CRUD)
 │   │   ├── ui/                         # User Interface modules
 │   │   │   ├── cli_app.py              # Main CLI application logic and menus
 │   │   │   ├── display/                # Modules for displaying data (tables, views)
