@@ -9,6 +9,7 @@ from .wizards.generic_wizards import prompt_for_project_directory
 from ..utils import config_manager
 from .ascii_art import get_ascii_art
 from .services.project_interaction_service import ProjectInteractionService
+from .services.note_import_service import NoteImportService # Import the new service
 
 console = Console()
 
@@ -17,13 +18,14 @@ class CLIApp:
         self.project_repository = project_repository
         self.console = Console()
         self.project_interaction_service = ProjectInteractionService(project_repository, self.console)
+        self.note_import_service = NoteImportService(project_repository, self.console) # Instantiate the new service
 
     def main_menu(self):
         self.console.print(get_ascii_art())
         while True:
             choice = questionary.select(
                 "What do you want to do?",
-                choices=["Create New Project", "View Existing Projects", "Delete Project", "Import General Notes", "Configure Project Directory", "Exit"]
+                choices=["Create New Project", "View Existing Projects", "Delete Project", "Import General Notes", "Add Note to Notebook", "Configure Project Directory", "Exit"]
             ).ask()
 
             if choice == "Create New Project":
@@ -33,7 +35,11 @@ class CLIApp:
             elif choice == "Delete Project":
                 self.delete_project()
             elif choice == "Import General Notes":
-                self.import_general_notes()
+                if not self._validate_project_directory():
+                    return
+                self.note_import_service.import_general_notes() # Delegate to the new service
+            elif choice == "Add Note to Notebook":
+                self._add_note_to_notebook()
             elif choice == "Configure Project Directory":
                 self._configure_project_directory()
             elif choice == "Exit" or choice is None:
@@ -42,50 +48,62 @@ class CLIApp:
                 else:
                     continue # If user says no, continue the loop and show main menu again
 
-    def import_general_notes(self):
+    def _add_note_to_notebook():
         if not self._validate_project_directory():
             return
 
-        import_choice = questionary.select(
-            "Do you want to import a single note or multiple notes?",
-            choices=["Import Single Note", "Import Multiple Notes (Coming Soon)"]
+        all_projects = self.project_repository.get_projects()
+        general_notes_projects = []
+        notebook_projects = []
+
+        for project_name in all_projects:
+            meta = self.project_repository.get_project_meta(project_name)
+            if meta.get('type') == "General Notes":
+                general_notes_projects.append(project_name)
+            elif meta.get('type') == "Notebook":
+                notebook_projects.append(project_name)
+        
+        if not general_notes_projects:
+            self.console.print("[bold yellow]No 'General Notes' projects found to add.[/bold yellow]")
+            return
+
+        if not notebook_projects:
+            self.console.print("[bold yellow]No 'Notebook' projects found. Please create one first.[/bold yellow]")
+            return
+
+        note_to_add = questionary.select(
+            "Select a 'General Note' project to add to a Notebook:",
+            choices=general_notes_projects
         ).ask()
 
-        if import_choice == "Import Single Note":
-            file_path = questionary.text("Enter the absolute path to the .txt file:").ask()
-            if not file_path:
-                self.console.print("[bold red]File path cannot be empty.[/bold red]")
-                return
-            
-            if not os.path.exists(file_path):
-                self.console.print(f"[bold red]Error: File not found at {file_path}[/bold red]")
-                return
-            
-            if not file_path.lower().endswith(".txt"):
-                self.console.print("[bold red]Error: Only .txt files are supported for import.[/bold red]")
-                return
-
-            try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-            except Exception as e:
-                self.console.print(f"[bold red]Error reading file: {e}[/bold red]")
-                return
-
-            project_name = os.path.splitext(os.path.basename(file_path))[0]
-            project_type = "General Notes"
-
-            success, message = self.project_repository.create_project(project_name, project_type)
-            if success:
-                self.console.print(f"[bold green]{message}[/bold green]")
-                # Add content to the 'Notes' section of the new project
-                self.project_repository.save_section_content(project_name, "Notes", content)
-                self.console.print(f"[bold green]Content from {os.path.basename(file_path)} imported into '{project_name}' project.[/bold green]")
-            else:
-                self.console.print(f"[bold red]{message}[/bold red]")
-        elif import_choice == "Import Multiple Notes (Coming Soon)":
-            self.console.print("[bold yellow]Importing multiple notes is not yet implemented. Please select 'Import Single Note'.[/bold yellow]")
+        if not note_to_add:
+            self.console.print("[yellow]Operation cancelled.[/yellow]")
             return
+
+        target_notebook = questionary.select(
+            f"Select the 'Notebook' project to add '{note_to_add}' to:",
+            choices=notebook_projects
+        ).ask()
+
+        if not target_notebook:
+            self.console.print("[yellow]Operation cancelled.[/yellow]")
+            return
+
+        # Get the content of the General Note
+        note_content = self.project_repository.get_section_content(note_to_add, "Notes")
+
+        # Add the note as a new section in the target Notebook
+        success, message = self.project_repository.add_section_to_project(target_notebook, note_to_add, note_content)
+        if success:
+            self.console.print(f"[green]Successfully added '{note_to_add}' to '{target_notebook}' as a new section.[/green]")
+            # Delete the original General Note project
+            delete_success, delete_message = self.project_repository.delete_project(note_to_add)
+            if delete_success:
+                self.console.print(f"[green]Original 'General Note' project '{note_to_add}' deleted.[/green]")
+            else:
+                self.console.print(f"[bold red]Error deleting original 'General Note' project: {delete_message}[/bold red]")
+        else:
+            self.console.print(f"[bold red]Error adding note to notebook: {message}[/bold red]")
 
     def _configure_project_directory(self):
         self.console.print("\n[bold]Configure Project Directory[/bold]")
@@ -96,7 +114,7 @@ class CLIApp:
         
         if new_path != self.project_repository.base_dir: # Only update if path actually changed
             config_manager.set_project_directory_in_config(new_path)
-            self.project_repository.base_dir = new_path # Update the repository's base_dir immediately
+            self.project_repository.base_dir = new_path # This will now use the setter to re-initialize json_store
             self.console.print(f"[green]Project directory set to: {new_path}[/green]")
         else:
             self.console.print("[yellow]Project directory remains unchanged.[/yellow]")
@@ -163,7 +181,7 @@ class CLIApp:
 
         if project_to_view_display:
             # Extract the actual project name from the display string
-            project_to_view = project_to_view_display.split(' (')[0]
+            project_to_view = project_to_view_display.split(' (')[-2]
 
         if project_to_view:
             self.project_interaction_service.project_menu(project_to_view)

@@ -6,17 +6,33 @@ from datetime import datetime
 from ...core.models import Character, PlotPoint, WorldbuildingElement, Theme, NoteIdea, Reference, Chapter, Project
 from ...core.templates import TEMPLATES
 from .json_store import JsonStore
-from ...utils import export_formatter, reference_export_formatter
+from ...utils.exporters import markdown_exporter, json_exporter, txt_exporter
+from ...utils.exporters import bibtex_formatter, ris_formatter, zotero_rdf_formatter
 from ...utils.word_counter import calculate_word_count
 
 from ...utils.path_helpers import get_section_filepath
 
 class ProjectRepository:
     def __init__(self, base_dir="projects"):
-        self.base_dir = base_dir
-        self.json_store = JsonStore(base_dir)
-        if not os.path.exists(self.base_dir):
-            os.makedirs(self.base_dir)
+        self._base_dir = base_dir
+        self._json_store = JsonStore(base_dir)
+        if not os.path.exists(self._base_dir):
+            os.makedirs(self._base_dir)
+
+    @property
+    def base_dir(self):
+        return self._base_dir
+
+    @base_dir.setter
+    def base_dir(self, new_base_dir):
+        self._base_dir = new_base_dir
+        self._json_store = JsonStore(new_base_dir)
+        if not os.path.exists(self._base_dir):
+            os.makedirs(self._base_dir)
+
+    @property
+    def json_store(self):
+        return self._json_store
 
     def create_project(self, project_name: str, project_type: str) -> tuple[bool, str]:
         project_path = os.path.join(self.base_dir, project_name)
@@ -29,7 +45,11 @@ class ProjectRepository:
         self.json_store.write_json(os.path.join(project_name, "meta.json"), meta_data)
 
         for section in TEMPLATES[project_type]:
-            self.json_store.write_json(get_section_filepath(project_name, section), [])
+            # Initialize 'Notes' section for 'General Notes' as an empty string
+            if project_type == "General Notes" and section == "Notes":
+                self.json_store.write_json(get_section_filepath(project_name, section), "")
+            else:
+                self.json_store.write_json(get_section_filepath(project_name, section), [])
         
         return True, f"Project '{project_name}' of type '{project_type}' created successfully."
 
@@ -49,68 +69,69 @@ class ProjectRepository:
 
     def get_project_sections(self, project_name: str) -> list[str]:
         meta = self.get_project_meta(project_name)
-        return TEMPLATES[meta['type']]
+        project_type = meta.get('type')
+        
+        # Start with sections from the template
+        sections = TEMPLATES.get(project_type, [])
 
-    def get_section_content(self, project_name: str, section_name: str) -> list[dict]:
-        return self.json_store.read_json(get_section_filepath(project_name, section_name))
+        # For Notebooks, also include dynamically added sections (notes)
+        if project_type == "Notebook":
+            project_dir = os.path.join(self.base_dir, project_name)
+            # List all .json files in the project directory, excluding meta.json
+            dynamic_sections = [
+                os.path.splitext(f)[0] for f in os.listdir(project_dir)
+                if f.endswith('.json') and f != 'meta.json' and os.path.isfile(os.path.join(project_dir, f))
+            ]
+            # Add dynamic sections, ensuring no duplicates and maintaining order if possible
+            # For simplicity, we'll just append them for now.
+            for ds in dynamic_sections:
+                if ds not in sections:
+                    sections.append(ds)
+        return sections
 
-    def save_section_content(self, project_name: str, section_name: str, data: list[dict]):
-        self.json_store.write_json(get_section_filepath(project_name, section_name), data)
+    def add_section_to_project(self, project_name: str, section_name: str, content: str) -> tuple[bool, str]:
+        project_path = os.path.join(self.base_dir, project_name)
+        if not os.path.exists(project_path):
+            return False, "Project not found."
+        
+        section_filepath = get_section_filepath(project_name, section_name)
+        if os.path.exists(section_filepath):
+            return False, f"Section '{section_name}' already exists in project '{project_name}'."
+        
+        try:
+            self.json_store.write_json(section_filepath, content)
+            return True, f"Section '{section_name}' added to project '{project_name}'."
+        except Exception as e:
+            return False, f"Error adding section: {e}"
+
+    def get_section_content(self, project_name: str, section_name: str):
+        # For 'Notes' section in 'General Notes' project, return content as string
+        project_meta = self.get_project_meta(project_name)
+        if project_meta.get('type') == "General Notes" and section_name == "Notes":
+            return self.json_store.read_json(get_section_filepath(project_name, section_name), default_value="")
+        else:
+            return self.json_store.read_json(get_section_filepath(project_name, section_name), default_value=[])
+
+    def save_section_content(self, project_name: str, section_name: str, data):
+        # For 'Notes' section in 'General Notes' project, save content as string
+        project_meta = self.get_project_meta(project_name)
+        if project_meta.get('type') == "General Notes" and section_name == "Notes":
+            self.json_store.write_json(get_section_filepath(project_name, section_name), data)
+        else:
+            self.json_store.write_json(get_section_filepath(project_name, section_name), data)
 
     def export_project(self, project_name: str, export_format: str) -> str:
         project_abs_path = os.path.join(self.base_dir, project_name)
         output_content = ""
+        project_meta = self.get_project_meta(project_name)
+        sections = self.get_project_sections(project_name)
 
-        if export_format == "Markdown" or export_format == "TXT":
-            output_content += f"# {project_name}\n\n"
-            project_meta = self.get_project_meta(project_name)
-            project_type = project_meta.get('type')
-            sections = self.get_project_sections(project_name)
-
-            for section_name in sections:
-                content = self.get_section_content(project_name, section_name)
-                
-                if section_name == "Characters":
-                    output_content += export_formatter.format_characters_to_markdown(content)
-                elif section_name == "Plot":
-                    output_content += export_formatter.format_plot_points_to_markdown(content)
-                elif section_name == "Worldbuilding":
-                    output_content += export_formatter.format_worldbuilding_to_markdown(content)
-                elif section_name == "Themes":
-                    output_content += export_formatter.format_themes_to_markdown(content)
-                elif section_name == "Notes/Ideas":
-                    output_content += export_formatter.format_notes_to_markdown(content)
-                elif section_name == "References":
-                    output_content += export_formatter.format_references_to_markdown(content)
-                elif project_type == "Scientific Book" and section_name in ["Chapter 1", "Chapter 2", "Chapter 3", "Conclusion"]:
-                    output_content += export_formatter.format_chapters_to_markdown(content)
-                elif project_type in ["Scientific Article", "Scientific Book"] and section_name in ["Title", "Abstract", "Introduction", "Methods", "Results", "Discussion"]:
-                    output_content += export_formatter.format_generic_text_section_to_markdown(content, section_name)
-                else:
-                    # Fallback for any other sections not explicitly handled, or generic sections
-                    if content:
-                        output_content += f"## {section_name}\n\n"
-                        if isinstance(content, list) and len(content) == 1 and isinstance(content[0], str):
-                            output_content += f"{content[0]}\n\n"
-                        else:
-                            output_content += f"```json\n{json.dumps(content, indent=2)}\n```\n\n"
-                    else:
-                        output_content += f"## {section_name}\n\nNo content found.\n\n"
-
-            if export_format == "TXT":
-                # Convert Markdown to plain text for TXT export
-                # This is a very basic conversion, a proper Markdown parser would be better
-                output_content = output_content.replace("## ", "").replace("# ", "").replace("**", "").replace("```json", "").replace("```", "").replace("\n", "\n").replace("- ", "")
-
+        if export_format == "Markdown":
+            output_content = markdown_exporter.export_to_markdown(project_name, project_meta, sections, self.get_section_content)
+        elif export_format == "TXT":
+            output_content = txt_exporter.export_to_txt(project_name, project_meta, sections, self.get_section_content)
         elif export_format == "JSON":
-            all_data = {}
-            project_meta = self.get_project_meta(project_name)
-            all_data["meta"] = project_meta
-            sections = self.get_project_sections(project_name)
-            for section_name in sections:
-                content = self.get_section_content(project_name, section_name)
-                all_data[section_name.lower().replace(' ', '_')] = content
-            output_content = json.dumps(all_data, indent=4)
+            output_content = json_exporter.export_to_json(project_name, project_meta, sections, self.get_section_content)
         elif export_format in ["BibTeX", "RIS", "Zotero RDF"]:
             references_content = self.get_section_content(project_name, "References")
             if not references_content:
