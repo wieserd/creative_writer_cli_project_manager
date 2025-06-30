@@ -4,21 +4,20 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# Navigate to the project root
-cd "$PROJECT_ROOT" || exit
-
 # Create a virtual environment if it doesn't exist
-if [ ! -d "venv" ]; then
+if [ ! -d "$PROJECT_ROOT/venv" ]; then
     echo "Creating virtual environment..."
-    python3 -m venv venv
+    python3 -m venv "$PROJECT_ROOT/venv"
 fi
 
 # Activate the virtual environment
-source venv/bin/activate
+source "$PROJECT_ROOT/venv/bin/activate"
 
-# Install the package in editable mode
+# Navigate to the project root and install the package in editable mode
+cd "$PROJECT_ROOT" || exit
+
 echo "Installing/Updating package dependencies..."
-pip install -e "$PROJECT_ROOT"
+pip install -e .
 
 # Run the CLI application
 echo "Starting Creative Writer CLI..."
