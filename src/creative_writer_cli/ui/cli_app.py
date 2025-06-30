@@ -1,6 +1,7 @@
 import questionary
 from rich.console import Console
 import json
+import os
 
 from ..data.repositories.project_repository import ProjectRepository
 from ..core.templates import TEMPLATES
@@ -59,7 +60,10 @@ class CLIApp:
             return False
         return True
 
-    def create_project():
+    def create_project(self):
+        if not self._validate_project_directory():
+            return
+
         project_type = questionary.select(
             "What type of writing?",
             choices=list(TEMPLATES.keys())
@@ -91,6 +95,9 @@ class CLIApp:
             self.console.print(f"[bold red]{message}[/bold red]")
 
     def view_projects(self):
+        if not self._validate_project_directory():
+            return
+
         projects = self.project_repository.get_projects()
         if not projects:
             self.console.print("[bold yellow]No projects found.[/bold yellow]")

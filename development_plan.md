@@ -36,3 +36,14 @@
 
 *   **4.1 Update `README.md`:** Reflect the new project structure and modularity. SUCCESS
 *   **4.2 Update `development_plan.md`:** Mark steps as SUCCESS.
+
+**Phase 5: Add Project Directory Existence Check and User Guidance**
+
+*   **5.1 Implement a Project Directory Validation Method:**
+    *   Add a new private helper method `_validate_project_directory()` to the `CLIApp` class.
+    *   This method will check if `self.project_repository.base_dir` exists and is a directory.
+    *   If not, it will print the error message: "Could not open specified project folder. Please configure project directory." and return `False`.
+    *   Otherwise, it returns `True`. SUCCESS
+*   **5.2 Integrate Validation into Key Operations:**
+    *   Call `_validate_project_directory()` at the beginning of `create_project()` and `view_projects()`.
+    *   If the validation fails (returns `False`), the method should immediately return, preventing further errors. SUCCESS
